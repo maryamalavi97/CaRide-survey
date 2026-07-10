@@ -1,0 +1,1432 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="UTF-8" />
+<meta name="viewport" content="width=device-width, initial-scale=1.0" />
+<title>CaRide – Campus Mobility Survey</title>
+<link rel="stylesheet" href="https://unpkg.com/leaflet@1.9.4/dist/leaflet.css" />
+<script src="https://unpkg.com/leaflet@1.9.4/dist/leaflet.js"></script>
+
+<!--
+  ============================================================
+  CaRide survey prototype (single file). BILINGUAL: English + French.
+  PART A (in <script>) = the content you edit most.
+  Every piece of text is written as { en:"...", fr:"..." }.
+  Edit, save (Ctrl-S), refresh the browser (F5).
+  ============================================================
+-->
+
+<style>
+  :root{
+    --bg:#F6F8FC; --card:#FFFFFF; --ink:#1B2A4A; --ink-soft:#43507A; --muted:#6B7280; --line:#E4E8F0;
+    --mint:#34B27B; --mint-soft:#E5F6EE; --lavender:#8B7AE0; --lav-soft:#EFEBFB;
+    --coral:#E76F60; --coral-soft:#FDEDEA; --amber:#E9B454;
+  }
+  *{ box-sizing:border-box; }
+  html,body{ margin:0; padding:0; }
+  body{ background:var(--bg); color:var(--ink); line-height:1.55; -webkit-font-smoothing:antialiased;
+    font-family:-apple-system,BlinkMacSystemFont,"Segoe UI",Roboto,Helvetica,Arial,sans-serif; }
+  strong{ font-weight:750; color:var(--ink); }
+
+  .wrap{ max-width:660px; margin:0 auto; padding:24px 18px 80px; }
+  .progress{ display:flex; gap:4px; margin:8px 0 22px; flex-wrap:wrap; }
+  .progress .seg{ flex:1; min-width:6px; height:6px; border-radius:99px; background:var(--line); transition:background .25s; }
+  .progress .seg.done{ background:var(--mint); }
+  .progress .seg.current{ background:var(--lavender); }
+
+  .card{ background:var(--card); border:1px solid var(--line); border-radius:20px; padding:30px 28px;
+    box-shadow:0 6px 24px rgba(27,42,74,.05); }
+  .eyebrow{ display:inline-block; font-size:12px; letter-spacing:.10em; text-transform:uppercase; font-weight:700;
+    color:var(--lavender); background:var(--lav-soft); padding:5px 12px; border-radius:99px; margin-bottom:14px; }
+  h1{ font-size:25px; line-height:1.25; margin:0 0 12px; }
+  h2{ font-size:21px; line-height:1.3; margin:0 0 10px; }
+  p{ margin:0 0 14px; color:var(--ink-soft); }
+  .muted{ color:var(--muted); font-size:14px; }
+
+  .q{ font-weight:650; margin:22px 0 10px; font-size:16px; }
+  .q:first-of-type{ margin-top:6px; }
+
+  .options{ display:flex; flex-direction:column; gap:10px; }
+  .opt{ display:flex; align-items:center; gap:12px; border:1.5px solid var(--line); border-radius:14px;
+    padding:13px 15px; cursor:pointer; background:#fff; transition:border-color .15s, background .15s; }
+  .opt:hover{ border-color:#C9D0DE; }
+  .opt.sel{ border-color:var(--mint); background:var(--mint-soft); }
+  .opt .dot{ width:20px;height:20px;border-radius:99px;border:2px solid #C2CAD8;flex:none;position:relative; }
+  .opt.sel .dot{ border-color:var(--mint); }
+  .opt.sel .dot::after{ content:""; position:absolute; inset:4px; border-radius:99px; background:var(--mint); }
+  .opt .txt{ font-size:15px; }
+
+  .chips{ display:flex; flex-wrap:wrap; gap:9px; }
+  .chip{ border:1.5px solid var(--line); border-radius:99px; padding:9px 15px; cursor:pointer; font-size:14px;
+    background:#fff; transition:all .15s; }
+  .chip:hover{ border-color:#C9D0DE; }
+  .chip.sel{ border-color:var(--lavender); background:var(--lav-soft); font-weight:600; }
+
+  .ranklist{ display:flex; flex-direction:column; gap:9px; margin-top:4px; }
+  .rankitem{ display:flex; align-items:center; gap:12px; border:1.5px solid var(--line); border-radius:14px;
+    padding:12px 15px; cursor:pointer; background:#fff; transition:border-color .15s, background .15s; }
+  .rankitem:hover{ border-color:#C9D0DE; }
+  .rankitem.sel{ border-color:var(--lavender); background:var(--lav-soft); }
+  .rankbadge{ width:24px; height:24px; border-radius:99px; border:2px solid #C2CAD8; flex:none; display:flex;
+    align-items:center; justify-content:center; font-size:13px; font-weight:700; color:var(--muted); }
+  .rankitem.sel .rankbadge{ border-color:var(--lavender); background:var(--lavender); color:#fff; }
+  .rankitem .txt{ font-size:15px; }
+  .rankitem.optout.sel{ border-color:var(--coral); background:var(--coral-soft); }
+  .rankitem.optout.sel .rankbadge{ border-color:var(--coral); background:var(--coral); }
+  .rank-callout{ display:flex; align-items:flex-start; gap:9px; margin:2px 0 10px; padding:10px 14px;
+    border-radius:12px; background:#FCF1DC; border:1.5px solid var(--amber); color:#8A5A00;
+    font-size:13.5px; font-weight:650; line-height:1.4; }
+  .rank-callout .rk-ic{ font-size:17px; line-height:1.2; flex:none; }
+  .rank-status{ margin-top:10px; display:inline-flex; align-items:center; gap:7px; padding:6px 12px;
+    border-radius:99px; font-size:13px; font-weight:750; }
+  .rank-status.todo{ color:#8A5A00; background:#FCF1DC; border:1.5px solid var(--amber); }
+  .rank-status.done{ color:#1C7B50; background:var(--mint-soft); border:1.5px solid var(--mint); }
+  .save-status{ font-weight:650; margin:6px 0 4px; }
+  .save-status.todo{ color:var(--ink-soft); }
+  .save-status.done{ color:#1C7B50; }
+  .save-status.err{ color:var(--coral); }
+  .save-status.muted{ color:var(--muted); font-weight:500; font-size:14px; }
+
+  .deflist{ display:flex; flex-direction:column; gap:13px; margin-top:8px; }
+  .defitem{ border-left:3px solid var(--lavender); padding:3px 0 3px 14px; }
+  .defitem.key{ background:var(--mint-soft); border-left-color:var(--mint); border-radius:0 12px 12px 0; padding:10px 14px; }
+  .defterm{ font-weight:700; font-size:15px; margin-bottom:2px; }
+  .defdesc{ font-size:14px; color:var(--ink-soft); }
+
+  .stlegend{ display:flex; gap:16px; flex-wrap:wrap; margin:10px 0 4px; font-size:13px; color:var(--muted); }
+  .stlegend .lg{ display:flex; align-items:center; gap:7px; }
+  .stdot{ width:13px; height:13px; border-radius:99px; flex:none; }
+  .stmap{ height:300px; border-radius:14px; overflow:hidden; border:1px solid var(--line); margin:10px 0 12px; background:#EEF1F7; }
+  .stlist{ display:flex; flex-direction:column; gap:9px; }
+  .strow{ display:flex; gap:11px; align-items:center; border:1.5px solid var(--line); border-radius:12px; padding:11px 13px; cursor:pointer; background:#fff; transition:border-color .15s, background .15s; }
+  .strow:hover{ border-color:#C9D0DE; }
+  .strow.sel{ border-color:var(--mint); background:var(--mint-soft); box-shadow:inset 0 0 0 1px var(--mint); }
+  .stpin{ flex:none; width:26px; height:26px; border-radius:99px; display:flex; align-items:center; justify-content:center; color:#fff; font-weight:700; font-size:12px; }
+  .stname{ font-weight:600; font-size:14px; line-height:1.25; }
+  .stmeta{ font-size:12px; color:var(--muted); }
+
+  .alts{ display:flex; flex-direction:column; gap:12px; margin-top:6px; }
+  .alt{ border:1.5px solid var(--line); border-radius:16px; overflow:hidden; cursor:pointer; background:#fff;
+    transition:border-color .15s, box-shadow .15s; }
+  .alt:hover{ border-color:#C9D0DE; }
+  .alt.sel{ border-color:var(--mint); box-shadow:0 0 0 3px var(--mint-soft); }
+  .alt-head{ display:flex; align-items:center; gap:12px; padding:14px 16px; border-bottom:1px solid var(--line); background:#FCFDFF; }
+  .alt.sel .alt-head{ background:var(--mint-soft); }
+  .alt-name{ font-weight:700; font-size:16px; }
+  .alt-rows{ padding:10px 16px 14px; display:flex; flex-direction:column; gap:8px; }
+  .row{ display:flex; justify-content:space-between; gap:14px; font-size:14px; align-items:center; }
+  .row .k{ color:var(--muted); display:flex; align-items:center; gap:8px; }
+  .row .v{ font-weight:600; text-align:right; }
+
+  .icon{ width:38px;height:38px;border-radius:99px;flex:none;display:flex;align-items:center;justify-content:center;
+    border:2px solid;background:#fff; }
+  .ai{ width:17px; height:17px; flex:none; }
+
+  .tripmap{ height:230px; border-radius:14px; overflow:hidden; border:1px solid var(--line); margin:6px 0 12px; background:#EEF1F7; }
+  .map-fallback{ height:100%; display:flex; align-items:center; justify-content:center; text-align:center; padding:16px; color:var(--muted); font-size:13.5px; }
+  .leaflet-container{ font:inherit; }
+
+  .ab{ display:grid; grid-template-columns:1fr 1fr; gap:12px; margin-top:6px; }
+  @media(max-width:480px){ .ab{ grid-template-columns:1fr; } }
+
+  .likert{ display:flex; flex-direction:column; gap:16px; margin-top:6px; }
+  .lk-q{ font-size:15px; font-weight:600; margin-bottom:8px; }
+  .lk-eg{ font-size:13px; color:var(--muted); font-weight:400; margin:-4px 0 8px; }
+  .scale{ display:flex; gap:6px; }
+  .scale button{ flex:1; border:1.5px solid var(--line); background:#fff; border-radius:10px; padding:9px 4px;
+    cursor:pointer; font-size:11.5px; color:var(--muted); transition:all .12s; font-family:inherit; line-height:1.25; }
+  .scale button.sel{ border-color:var(--lavender); background:var(--lav-soft); color:var(--ink); font-weight:700; }
+
+  .att-label{ display:inline-block; font-size:11.5px; font-weight:700; letter-spacing:.05em; text-transform:uppercase; padding:4px 11px; border-radius:99px; }
+
+  .rate2{ margin-top:16px; }
+  .rate-q{ font-size:15px; font-weight:600; }
+  .rate-def{ font-size:13px; color:var(--muted); margin:2px 0 8px; }
+
+  textarea, input[type=text]{ width:100%; border:1.5px solid var(--line); border-radius:12px; padding:12px 14px; font-size:15px; font-family:inherit; color:var(--ink); }
+  textarea:focus, input:focus{ outline:none; border-color:var(--lavender); }
+
+  .consent{ display:flex; gap:12px; align-items:flex-start; border:1.5px solid var(--line); border-radius:14px; padding:14px 16px; cursor:pointer; }
+  .consent.sel{ border-color:var(--mint); background:var(--mint-soft); }
+  .consent input{ margin-top:3px; width:18px; height:18px; accent-color:var(--mint); }
+
+  .langgrid{ display:flex; gap:14px; justify-content:center; flex-wrap:wrap; }
+  .langcard{ border:1.5px solid var(--line); border-radius:16px; padding:22px 30px; cursor:pointer; display:flex;
+    flex-direction:column; align-items:center; gap:12px; transition:border-color .15s, background .15s; }
+  .langcard:hover{ border-color:var(--mint); background:var(--mint-soft); }
+  .langname{ font-weight:700; font-size:16px; }
+
+  .nav{ display:flex; justify-content:space-between; align-items:center; margin-top:24px; }
+  .btn{ border:none; border-radius:99px; padding:13px 26px; font-size:15px; font-weight:700; cursor:pointer; font-family:inherit; transition:transform .05s, opacity .15s; }
+  .btn:active{ transform:translateY(1px); }
+  .btn-primary{ background:var(--mint); color:#fff; }
+  .btn-ghost{ background:transparent; color:var(--muted); }
+  .hint{ color:var(--coral); font-size:13px; margin-top:10px; min-height:18px; font-weight:600; }
+
+  .pill-note{ background:var(--coral-soft); border:1px solid #F6D2CC; color:#9b3a2e; border-radius:12px; padding:11px 14px; font-size:13.5px; margin:14px 0; }
+  .center{ text-align:center; }
+  .big-check{ width:64px;height:64px;border-radius:99px;background:var(--mint-soft);display:flex;align-items:center;justify-content:center;margin:0 auto 18px; }
+
+
+  /* Multiple public-transport route choices inside the PT card */
+  .pt-route-picker{ margin:0 16px 14px; padding:12px; border:1px solid #D8E5DF; border-radius:12px; background:#F7FCF9; }
+  .pt-route-title{ font-size:13px; font-weight:750; color:#235B42; margin-bottom:8px; }
+  .pt-route-choices{ display:flex; flex-direction:column; gap:8px; }
+  .pt-route-choice{ width:100%; border:1.5px solid #CFE4D8; background:#fff; border-radius:10px; padding:9px 10px; cursor:pointer; text-align:left; font:inherit; color:var(--ink); }
+  .pt-route-choice.active{ border-color:var(--mint); background:var(--mint-soft); }
+  .pt-route-choice .top{ display:flex; justify-content:space-between; gap:8px; font-size:13px; font-weight:700; }
+  .pt-route-choice .sub{ margin-top:3px; font-size:12px; color:var(--muted); }
+  .pt-steps{ list-style:none; margin:11px 0 0; padding:0; border-top:1px solid #DCEDE3; }
+  .pt-step{ display:grid; grid-template-columns:74px 1fr auto; gap:8px; align-items:start; padding:8px 0; border-bottom:1px solid #E7F2EB; font-size:12px; }
+  .pt-step:last-child{ border-bottom:none; padding-bottom:0; }
+  .pt-step-kind{ font-weight:750; color:#235B42; }
+  .pt-step-main{ color:var(--ink-soft); }
+  .pt-step-time{ color:var(--muted); white-space:nowrap; }
+
+
+  /* PT routes are now separate alternatives, not nested under one PT card. */
+  .pt-card .alt-head{ border-bottom:1px solid var(--line); }
+  .pt-card .alt-name{ line-height:1.2; }
+  .pt-card .route-subtitle{ margin-left:auto; font-size:12px; color:var(--muted); font-weight:650; }
+  .pt-detail{ margin:0 16px 14px; padding:11px 12px; border:1px solid #D9EAFE; background:#F6FBFF; border-radius:12px; }
+  .pt-detail-title{ font-size:12px; font-weight:750; color:#075985; margin-bottom:7px; }
+
+  .map-legend{
+    display:flex; flex-wrap:wrap; gap:10px 14px; align-items:center;
+    margin:-2px 0 12px; font-size:12px; color:var(--muted);
+  }
+  .map-legend-item{ display:flex; align-items:center; gap:6px; }
+  .legend-line{ width:27px; height:0; border-top:5px solid; border-radius:99px; flex:none; }
+  .legend-walk{ border-top-color:#0EA5E9; border-top-style:dotted; }
+  .legend-ride-a{ border-top-color:#14B8A6; }
+  .legend-ride-b{ border-top-color:#8B5CF6; }
+  .legend-transfer{
+    width:12px; height:12px; border-radius:99px; background:#F59E0B;
+    border:2px solid #fff; box-shadow:0 0 0 1px #B45309; flex:none;
+  }
+
+</style>
+</head>
+
+<body>
+  <div class="wrap">
+    <div class="progress" id="progress"></div>
+    <div class="card" id="screen"></div>
+    <div class="hint" id="hint"></div>
+    <div class="nav">
+      <button class="btn btn-ghost" id="backBtn"></button>
+      <button class="btn btn-primary" id="nextBtn"></button>
+    </div>
+  </div>
+
+<!--
+  Route geometry generated from the R script.
+  Keep this file beside the survey HTML. It defines window.CARIDE_ROUTE_DATA.
+-->
+<script src="./caride_survey_routes.js"></script>
+
+<script>
+/* ============================================================
+   PART A — THE CONTENT YOU EDIT MOST.  Each text = { en, fr }.
+   ============================================================ */
+
+/* ---- STEP 3: SAVE ANSWERS TO GOOGLE SHEET ----------------------------
+   RELAY_ENDPOINT (below) is the address of your own site's helper program
+   (see netlify/functions/save.js) — this is what respondents' browsers
+   actually talk to. It works even on networks that block Google directly.
+
+   SHEET_ENDPOINT is only a BACKUP, used automatically when you open this
+   file straight from your own computer to test it (where the helper
+   program isn't running). It's the same Google Apps Script address as
+   before. You don't need to touch either of these day-to-day. */
+const RELAY_ENDPOINT = "/.netlify/functions/save";
+const SHEET_ENDPOINT = "https://script.google.com/macros/s/AKfycbywTb5OXQlPYPYsnEphqPsc4IHzdY3s6iqWbIXmfXANnYOXLRpRU8RK91s9YgyW49eJYg/exec";
+/* --------------------------------------------------------------------- */
+
+/* Fixed interface words (buttons, row labels, scales) */
+const UI = {
+  en:{ back:"← Back", cont:"Continue →", finish:"Finish", answer:"Please answer to continue.",
+    rowTime:"Travel time", rowCost:"Cost", rowAccess:"Access", rowSharingWith:"Sharing with",
+    rowWalk:"Walk", rowWait:"Wait", rowSharing:"Sharing",
+    pickAbove:"Pick an option above to continue.",
+    followHead:"Three quick follow-ups about the option you picked",
+    accQ:"How acceptable is this option to you?", accDef:"Acceptable = you'd be genuinely OK choosing it in real life.",
+    fairQ:"How fair does the price feel?", fairDef:"Fair = the price seems reasonable for what you get.",
+    safeQ:"How safe would you feel on this trip?", safeDef:"Safe = comfortable and secure during the journey.",
+    whichChoose:"Which would you choose?", whichCaride:"Which CaRide offer do you prefer?",
+    neither:"I wouldn't use either of these",
+    mapCap:(o,d)=>`Real trip: ${o} → ${d}. The map shows the route; the times and prices below are the options to compare.`,
+    dlCSV:"Download my answers (CSV)", dlJSON:"Download as JSON",
+    scaleRate:["Not at all","Slightly","Moderately","Very","Completely"],
+    scalePurpose:["Very unlikely","Unlikely","Maybe","Likely","Very likely"],
+    scaleAtt:["Strongly disagree","Disagree","Maybe","Agree","Strongly agree"] },
+  fr:{ back:"← Retour", cont:"Continuer →", finish:"Terminer", answer:"Veuillez répondre pour continuer.",
+    rowTime:"Durée du trajet", rowCost:"Coût", rowAccess:"Accès", rowSharingWith:"Partagé avec",
+    rowWalk:"Marche", rowWait:"Attente", rowSharing:"Partage",
+    pickAbove:"Choisissez une option ci-dessus pour continuer.",
+    followHead:"Trois questions rapides sur l'option choisie",
+    accQ:"Cette option vous convient-elle ?", accDef:"Acceptable = vous seriez réellement prêt·e à la choisir dans la vraie vie.",
+    fairQ:"Le prix vous semble-t-il juste ?", fairDef:"Juste = le prix semble raisonnable pour ce que vous obtenez.",
+    safeQ:"À quel point vous sentiriez-vous en sécurité ?", safeDef:"En sécurité = à l'aise et en confiance pendant le trajet.",
+    whichChoose:"Que choisiriez-vous ?", whichCaride:"Quelle offre CaRide préférez-vous ?",
+    neither:"Je n'utiliserais aucune des deux",
+    mapCap:(o,d)=>`Trajet réel : ${o} → ${d}. La carte montre l'itinéraire ; les durées et prix ci-dessous sont les options à comparer.`,
+    dlCSV:"Télécharger mes réponses (CSV)", dlJSON:"Télécharger en JSON",
+    scaleRate:["Pas du tout","Un peu","Moyennement","Très","Tout à fait"],
+    scalePurpose:["Très improbable","Improbable","Peut-être","Probable","Très probable"],
+    scaleAtt:["Pas du tout d'accord","Plutôt pas d'accord","Peut-être","Plutôt d'accord","Tout à fait d'accord"] }
+};
+
+const MODE_INFO = {
+  pt:  { name:{en:"Public transport",fr:"Transports en commun"}, color:"#34B27B" },
+  taxi:{ name:{en:"Taxi / Uber",fr:"Taxi / Uber"}, color:"#E9B454" },
+  caride:{ name:{en:"CaRide",fr:"CaRide"}, color:"#8B7AE0" },
+  car: { name:{en:"Private car",fr:"Voiture personnelle"}, color:"#6B7280" }
+};
+
+const STATIONS = [
+  {id:"CLEM_MERGED_1",  type:"exist", name:"EPAMARNE – Cité Descartes Clem hub", sub:{en:"Existing Clem hub · on campus",fr:"Station Clem existante · sur le campus"}, lat:48.84433,   lon:2.582385},
+  {id:"NEW_CANDIDATE_1", type:"camp",  name:"East Cité Descartes / Le Luzard",   sub:{en:"Proposed · near Place Pablo Picasso",fr:"Proposée · près de la Place Pablo Picasso"}, lat:48.8416787, lon:2.6054691},
+  {id:"NEW_CANDIDATE_2", type:"camp",  name:"Southwest Cité Descartes",          sub:{en:"Proposed · near Le Closeau",fr:"Proposée · près du Closeau"}, lat:48.837048,  lon:2.5725049},
+  {id:"NEW_CANDIDATE_3", type:"camp",  name:"Champs-sur-Marne Centre",           sub:{en:"Proposed · near Champs centre",fr:"Proposée · près du centre de Champs"}, lat:48.8523225, lon:2.6021995},
+  {id:"NEW_CANDIDATE_4", type:"camp",  name:"North Cité Descartes",              sub:{en:"Proposed · near Collège A. Lanoux",fr:"Proposée · près du Collège A. Lanoux"}, lat:48.8532837, lon:2.5838766},
+  {id:"NEW_CANDIDATE_5", type:"camp",  name:"Noisy-Champs West",                 sub:{en:"Proposed · near Noisy-Champs",fr:"Proposée · près de Noisy-Champs"}, lat:48.8424737, lon:2.5729077}
+];
+
+const DESTINATIONS = {
+  EXTERNAL_CANDIDATE_1:{name:"IKEA Villiers-sur-Marne",   cat:{en:"furniture shopping",fr:"achats de meubles"},   lat:48.82791395, lon:2.529865382},
+  EXTERNAL_CANDIDATE_2:{name:"Hôpital Privé de Marne-la-Vallée", cat:{en:"hospital / clinic",fr:"hôpital / clinique"}, lat:48.8391755,  lon:2.538774581},
+  EXTERNAL_CANDIDATE_3:{name:"Centre Commercial Bay 2",   cat:{en:"shopping centre",fr:"centre commercial"},      lat:48.83682935, lon:2.662157159},
+  EXTERNAL_CANDIDATE_4:{name:"Chelles-Gournay RER",       cat:{en:"transit hub",fr:"pôle de correspondance"},     lat:48.87405385, lon:2.584485383},
+  EXTERNAL_CANDIDATE_5:{name:"Bussy-Saint-Georges RER",   cat:{en:"RER / residential hub",fr:"RER / pôle résidentiel"}, lat:48.83635985, lon:2.709290791}
+};
+
+const ROUTES = {
+  "CLEM_MERGED_1":{
+    "EXTERNAL_CANDIDATE_2":{pt:{total:29.4,walk:13.4,wait:8.7,transfers:1},car:{total:8.1,walk:0.0,wait:0.0,transfers:0},taxi:{total:13.1,walk:0.0,wait:5.0,transfers:0},caride:{total:18.1,walk:0.0,wait:5.0,transfers:0}},
+    "EXTERNAL_CANDIDATE_1":{pt:{total:41.0,walk:20.7,wait:8.0,transfers:1},car:{total:10.4,walk:0.0,wait:0.0,transfers:0},taxi:{total:15.4,walk:0.0,wait:5.0,transfers:0},caride:{total:20.4,walk:0.0,wait:5.0,transfers:0}},
+    "EXTERNAL_CANDIDATE_4":{pt:{total:49.2,walk:12.8,wait:4.3,transfers:1},car:{total:10.5,walk:0.0,wait:0.0,transfers:0},taxi:{total:15.5,walk:0.0,wait:5.0,transfers:0},caride:{total:20.5,walk:0.0,wait:5.0,transfers:0}},
+    "EXTERNAL_CANDIDATE_3":{pt:{total:28.7,walk:22.1,wait:0.0,transfers:0},car:{total:10.7,walk:0.0,wait:0.0,transfers:0},taxi:{total:15.7,walk:0.0,wait:5.0,transfers:0},caride:{total:20.7,walk:0.0,wait:5.0,transfers:0}}
+  },
+  "NEW_CANDIDATE_1":{
+    "EXTERNAL_CANDIDATE_2":{pt:{total:42.4,walk:37.1,wait:0.0,transfers:0},car:{total:10.3,walk:0.0,wait:0.0,transfers:0},taxi:{total:15.3,walk:0.0,wait:5.0,transfers:0},caride:{total:20.3,walk:0.0,wait:5.0,transfers:0}},
+    "EXTERNAL_CANDIDATE_1":{pt:{total:53.4,walk:28.2,wait:10.0,transfers:1},car:{total:12.6,walk:0.0,wait:0.0,transfers:0},taxi:{total:17.6,walk:0.0,wait:5.0,transfers:0},caride:{total:22.6,walk:0.0,wait:5.0,transfers:0}},
+    "EXTERNAL_CANDIDATE_4":{pt:{total:51.9,walk:21.2,wait:3.9,transfers:1},car:{total:13.8,walk:0.0,wait:0.0,transfers:0},taxi:{total:18.8,walk:0.0,wait:5.0,transfers:0},caride:{total:23.8,walk:0.0,wait:5.0,transfers:0}},
+    "EXTERNAL_CANDIDATE_3":{pt:{total:33.4,walk:29.6,wait:0.0,transfers:0},car:{total:12.3,walk:0.0,wait:0.0,transfers:0},taxi:{total:17.3,walk:0.0,wait:5.0,transfers:0},caride:{total:22.3,walk:0.0,wait:5.0,transfers:0}}
+  },
+  "NEW_CANDIDATE_2":{
+    "EXTERNAL_CANDIDATE_2":{pt:{total:34.1,walk:29.1,wait:0.0,transfers:0},car:{total:6.6,walk:0.0,wait:0.0,transfers:0},taxi:{total:11.6,walk:0.0,wait:5.0,transfers:0},caride:{total:16.6,walk:0.0,wait:5.0,transfers:0}},
+    "EXTERNAL_CANDIDATE_1":{pt:{total:48.9,walk:39.9,wait:0.0,transfers:0},car:{total:8.9,walk:0.0,wait:0.0,transfers:0},taxi:{total:13.9,walk:0.0,wait:5.0,transfers:0},caride:{total:18.9,walk:0.0,wait:5.0,transfers:0}},
+    "EXTERNAL_CANDIDATE_4":{pt:{total:59.1,walk:22.6,wait:4.3,transfers:1},car:{total:12.6,walk:0.0,wait:0.0,transfers:0},taxi:{total:17.6,walk:0.0,wait:5.0,transfers:0},caride:{total:22.6,walk:0.0,wait:5.0,transfers:0}},
+    "EXTERNAL_CANDIDATE_3":{pt:{total:38.6,walk:32.0,wait:0.0,transfers:0},car:{total:11.2,walk:0.0,wait:0.0,transfers:0},taxi:{total:16.2,walk:0.0,wait:5.0,transfers:0},caride:{total:21.2,walk:0.0,wait:5.0,transfers:0}},
+    "EXTERNAL_CANDIDATE_5":{pt:{total:34.4,walk:23.9,wait:0.0,transfers:0},car:{total:10.4,walk:0.0,wait:0.0,transfers:0},taxi:{total:15.4,walk:0.0,wait:5.0,transfers:0},caride:{total:20.4,walk:0.0,wait:5.0,transfers:0}}
+  },
+  "NEW_CANDIDATE_3":{
+    "EXTERNAL_CANDIDATE_2":{pt:{total:45.3,walk:28.8,wait:7.1,transfers:1},car:{total:10.9,walk:0.0,wait:0.0,transfers:0},taxi:{total:15.9,walk:0.0,wait:5.0,transfers:0},caride:{total:20.9,walk:0.0,wait:5.0,transfers:0}},
+    "EXTERNAL_CANDIDATE_1":{pt:{total:56.3,walk:19.9,wait:17.1,transfers:2},car:{total:13.2,walk:0.0,wait:0.0,transfers:0},taxi:{total:18.2,walk:0.0,wait:5.0,transfers:0},caride:{total:23.2,walk:0.0,wait:5.0,transfers:0}},
+    "EXTERNAL_CANDIDATE_4":{pt:{total:51.4,walk:51.4,wait:0.0,transfers:0},car:{total:10.0,walk:0.0,wait:0.0,transfers:0},taxi:{total:15.0,walk:0.0,wait:5.0,transfers:0},caride:{total:20.0,walk:0.0,wait:5.0,transfers:0}},
+    "EXTERNAL_CANDIDATE_5":{pt:{total:39.8,walk:13.2,wait:9.0,transfers:1},car:{total:14.4,walk:0.0,wait:0.0,transfers:0},taxi:{total:19.4,walk:0.0,wait:5.0,transfers:0},caride:{total:24.4,walk:0.0,wait:5.0,transfers:0}}
+  },
+  "NEW_CANDIDATE_4":{
+    "EXTERNAL_CANDIDATE_2":{pt:{total:45.7,walk:32.6,wait:5.7,transfers:1},car:{total:9.5,walk:0.0,wait:0.0,transfers:0},taxi:{total:14.5,walk:0.0,wait:5.0,transfers:0},caride:{total:19.5,walk:0.0,wait:5.0,transfers:0}},
+    "EXTERNAL_CANDIDATE_1":{pt:{total:60.4,walk:43.3,wait:5.7,transfers:1},car:{total:11.8,walk:0.0,wait:0.0,transfers:0},taxi:{total:16.8,walk:0.0,wait:5.0,transfers:0},caride:{total:21.8,walk:0.0,wait:5.0,transfers:0}},
+    "EXTERNAL_CANDIDATE_4":{pt:{total:43.2,walk:43.2,wait:0.0,transfers:0},car:{total:7.5,walk:0.0,wait:0.0,transfers:0},taxi:{total:12.5,walk:0.0,wait:5.0,transfers:0},caride:{total:17.5,walk:0.0,wait:5.0,transfers:0}},
+    "EXTERNAL_CANDIDATE_5":{pt:{total:43.8,walk:33.3,wait:0.0,transfers:0},car:{total:13.3,walk:0.0,wait:0.0,transfers:0},taxi:{total:18.3,walk:0.0,wait:5.0,transfers:0},caride:{total:23.3,walk:0.0,wait:5.0,transfers:0}}
+  },
+  "NEW_CANDIDATE_5":{
+    "EXTERNAL_CANDIDATE_2":{pt:{total:31.6,walk:15.5,wait:8.7,transfers:1},car:{total:8.3,walk:0.0,wait:0.0,transfers:0},taxi:{total:13.3,walk:0.0,wait:5.0,transfers:0},caride:{total:18.3,walk:0.0,wait:5.0,transfers:0}},
+    "EXTERNAL_CANDIDATE_1":{pt:{total:43.1,walk:22.8,wait:8.0,transfers:1},car:{total:10.6,walk:0.0,wait:0.0,transfers:0},taxi:{total:15.6,walk:0.0,wait:5.0,transfers:0},caride:{total:20.6,walk:0.0,wait:5.0,transfers:0}},
+    "EXTERNAL_CANDIDATE_4":{pt:{total:51.3,walk:14.9,wait:4.3,transfers:1},car:{total:11.4,walk:0.0,wait:0.0,transfers:0},taxi:{total:16.4,walk:0.0,wait:5.0,transfers:0},caride:{total:21.4,walk:0.0,wait:5.0,transfers:0}},
+    "EXTERNAL_CANDIDATE_5":{pt:{total:26.7,walk:16.1,wait:0.0,transfers:0},car:{total:13.7,walk:0.0,wait:0.0,transfers:0},taxi:{total:18.7,walk:0.0,wait:5.0,transfers:0},caride:{total:23.7,walk:0.0,wait:5.0,transfers:0}}
+  }
+};
+
+// ----------------------------------------------------------------
+// ROUTE DATA FOR THE MAP TASKS
+// caride_survey_routes.js is created by export_caride_survey_routes.R
+// It contains real, pre-calculated geometry for PT and road routes.
+// ----------------------------------------------------------------
+const ROUTE_GEOMETRIES = window.CARIDE_ROUTE_DATA || {};
+
+// These are the ONLY three destinations used in the labelled mode-choice part.
+// IKEA, Bay 2, Hospital. Change this order only if you want a different order.
+const MODE_DESTINATION_IDS = [
+  "EXTERNAL_CANDIDATE_1", // IKEA Villiers-sur-Marne
+  "EXTERNAL_CANDIDATE_3", // Centre Commercial Bay 2
+  "EXTERNAL_CANDIDATE_2"  // Hôpital Privé de Marne-la-Vallée
+];
+
+const CARIDE_DESIGN = {
+  "1":[
+    {task:1, A:{walk:0,wait:2,price:12,people:4}, B:{walk:10,wait:15,price:3,people:2}},
+    {task:2, A:{walk:0,wait:15,price:12,people:2}, B:{walk:10,wait:2,price:3,people:4}},
+    {task:3, A:{walk:10,wait:2,price:3,people:3}, B:{walk:0,wait:15,price:12,people:4}},
+    {task:4, A:{walk:10,wait:2,price:3,people:2}, B:{walk:0,wait:15,price:12,people:4}},
+    {task:5, A:{walk:0,wait:15,price:3,people:4}, B:{walk:10,wait:2,price:12,people:3}},
+    {task:6, A:{walk:0,wait:2,price:12,people:2}, B:{walk:10,wait:15,price:3,people:3}},
+    {task:7, A:{walk:10,wait:2,price:12,people:3}, B:{walk:0,wait:15,price:3,people:4}},
+    {task:8, A:{walk:0,wait:15,price:3,people:3}, B:{walk:10,wait:2,price:12,people:2}}
+  ],
+  "2":[
+    {task:1, A:{walk:0,wait:15,price:12,people:3}, B:{walk:10,wait:2,price:3,people:2}},
+    {task:2, A:{walk:10,wait:2,price:12,people:4}, B:{walk:0,wait:15,price:3,people:3}},
+    {task:3, A:{walk:0,wait:2,price:12,people:3}, B:{walk:10,wait:15,price:3,people:4}},
+    {task:4, A:{walk:10,wait:15,price:3,people:3}, B:{walk:0,wait:2,price:12,people:2}},
+    {task:5, A:{walk:10,wait:15,price:3,people:2}, B:{walk:0,wait:2,price:12,people:4}},
+    {task:6, A:{walk:0,wait:15,price:12,people:2}, B:{walk:10,wait:2,price:3,people:4}},
+    {task:7, A:{walk:10,wait:15,price:3,people:4}, B:{walk:0,wait:2,price:12,people:3}},
+    {task:8, A:{walk:0,wait:15,price:3,people:2}, B:{walk:10,wait:2,price:12,people:4}}
+  ]
+};
+
+const CARIDE_ID_TASKS = [
+  { id:"carideid_1",
+    title:{en:"CaRide — who you ride with",fr:"CaRide — avec qui vous voyagez"},
+    context:{en:"Two CaRide offers for the same trip. Look at who you'd share the car with. Which would you take?",fr:"Deux offres CaRide pour le même trajet. Regardez avec qui vous partageriez la voiture. Laquelle prendriez-vous ?"},
+    A:{walk:3,wait:5,price:7,people:3,who:"known"},   B:{walk:3,wait:5,price:7,people:3,who:"unknown"} },
+  { id:"carideid_2",
+    title:{en:"CaRide — who you ride with",fr:"CaRide — avec qui vous voyagez"},
+    context:{en:"Two CaRide offers for the same trip. Look at who you'd share the car with. Which would you take?",fr:"Deux offres CaRide pour le même trajet. Regardez avec qui vous partageriez la voiture. Laquelle prendriez-vous ?"},
+    A:{walk:3,wait:5,price:4,people:3,who:"unknown"}, B:{walk:3,wait:5,price:8,people:3,who:"known"} },
+  { id:"carideid_3",
+    title:{en:"CaRide — who you ride with",fr:"CaRide — avec qui vous voyagez"},
+    context:{en:"Two CaRide offers for the same trip. Look at who you'd share the car with. Which would you take?",fr:"Deux offres CaRide pour le même trajet. Regardez avec qui vous partageriez la voiture. Laquelle prendriez-vous ?"},
+    A:{walk:3,wait:5,price:6,people:3,who:"known"},   B:{walk:3,wait:5,price:4,people:3,who:"unknown"} }
+];
+
+const PURPOSES = [
+  { label:{en:"Shopping trips",fr:"Faire des courses"}, eg:{en:"IKEA, Les Arcades (Noisy-le-Grand), Val d'Europe",fr:"IKEA, Les Arcades (Noisy-le-Grand), Val d'Europe"} },
+  { label:{en:"Leisure or social trips",fr:"Loisirs ou sorties"}, eg:{en:"cinema, bowling, restaurants, meeting friends",fr:"cinéma, bowling, restaurants, retrouver des amis"} },
+  { label:{en:"Other occasional trips",fr:"Autres trajets occasionnels"}, eg:{en:"healthcare, administrative errands (préfecture, bank)",fr:"santé, démarches administratives (préfecture, banque)"} }
+];
+
+const ATTITUDES = [
+  { id:"share", label:{en:"Comfort & trust in sharing",fr:"Confort et confiance dans le partage"}, color:"#085041", bg:"#E1F5EE",
+    items:[
+      { en:"I would feel <strong>comfortable</strong> sharing a car with people I don't know.", fr:"Je me sentirais <strong>à l'aise</strong> de partager une voiture avec des personnes que je ne connais pas.", r:false },
+      { en:"I think the other riders would be <strong>pleasant and respectful</strong> to travel with.", fr:"Je pense que les autres passagers seraient <strong>agréables et respectueux</strong>.", r:false },
+      { en:"Sharing a ride with <strong>people I don't know</strong> would make me uncomfortable.", fr:"Partager un trajet avec <strong>des personnes que je ne connais pas</strong> me mettrait mal à l'aise.", r:true }
+    ]},
+  { id:"safety", label:{en:"Safety & security",fr:"Sûreté et sécurité"}, color:"#712B13", bg:"#FAECE7",
+    items:[
+      { en:"I would <strong>worry about my safety</strong> during a shared ride.", fr:"Je <strong>m'inquiéterais pour ma sécurité</strong> pendant un trajet partagé.", r:false },
+      { en:"I would feel <strong>safe</strong> using CaRide, even at night.", fr:"Je me sentirais <strong>en sécurité</strong> en utilisant CaRide, même la nuit.", r:true },
+      { en:"Getting into a car with <strong>people I don't know</strong> feels risky to me.", fr:"Monter dans une voiture avec <strong>des personnes que je ne connais pas</strong> me semble risqué.", r:false }
+    ]},
+  { id:"env", label:{en:"Environmental motivation",fr:"Motivation environnementale"}, color:"#27500A", bg:"#EAF3DE",
+    items:[
+      { en:"<strong>Reducing pollution</strong> matters to me when I choose how to travel.", fr:"<strong>Réduire la pollution</strong> compte pour moi quand je choisis comment me déplacer.", r:false },
+      { en:"I would happily share rides if it means <strong>less pollution</strong>.", fr:"Je partagerais volontiers des trajets si cela veut dire <strong>moins de pollution</strong>.", r:false },
+      { en:"Whether a trip is <strong>good for the environment</strong> doesn't really affect my choice.", fr:"Le fait qu'un trajet soit <strong>bon pour l'environnement</strong> n'influence pas vraiment mon choix.", r:true }
+    ]},
+  { id:"openness", label:{en:"Openness to new mobility",fr:"Ouverture aux nouvelles mobilités"}, color:"#3C3489", bg:"#EEEDFE",
+    items:[
+      { en:"I enjoy trying <strong>new transport apps</strong> and services.", fr:"J'aime essayer de <strong>nouvelles applis</strong> et services de transport.", r:false },
+      { en:"I am often <strong>one of the first</strong> to try a new way of getting around.", fr:"Je suis souvent <strong>parmi les premiers</strong> à essayer une nouvelle façon de me déplacer.", r:false },
+      { en:"I prefer to stick with the travel options I <strong>already know</strong>.", fr:"Je préfère m'en tenir aux options de transport que je <strong>connais déjà</strong>.", r:true }
+    ]}
+];
+const CAR_NEED = [
+  {en:"Big or heavy shopping",fr:"Courses volumineuses ou lourdes"},
+  {en:"Trips poorly served by public transport",fr:"Trajets mal desservis par les transports en commun"},
+  {en:"Evening / late-night trips",fr:"Trajets en soirée / la nuit"},
+  {en:"Leisure or social outings",fr:"Sorties loisirs ou entre amis"},
+  {en:"Healthcare appointments",fr:"Rendez-vous médicaux"},
+  {en:"Administrative errands",fr:"Démarches administratives"},
+  {en:"Carrying family or others",fr:"Transporter la famille ou d'autres personnes"},
+  {en:"Travel outside the city",fr:"Déplacements hors de la ville"},
+  {en:"I haven't needed a car",fr:"Je n'ai pas eu besoin de voiture"}
+];
+const SM_PURPOSE = [
+  {en:"Commuting",fr:"Trajets domicile-campus"},{en:"Shopping",fr:"Courses"},
+  {en:"Leisure or social",fr:"Loisirs ou sorties"},{en:"Errands or appointments",fr:"Démarches ou rendez-vous"},
+  {en:"Travel or holidays",fr:"Voyages ou vacances"},{en:"Other",fr:"Autre"}
+];
+const BARRIERS = [
+  {en:"Safety concerns",fr:"Inquiétudes pour la sécurité"},{en:"Trust in other riders",fr:"Confiance dans les autres passagers"},
+  {en:"Waiting time",fr:"Temps d'attente"},{en:"Walking to pickup",fr:"Marche jusqu'au point de rendez-vous"},
+  {en:"Unreliable schedule",fr:"Horaires peu fiables"},{en:"Privacy",fr:"Vie privée"},
+  {en:"Already have a car",fr:"J'ai déjà une voiture"},{en:"Public transport is enough",fr:"Les transports en commun suffisent"},{en:"Cost",fr:"Coût"}
+];
+const INCENTIVES = [
+  {en:"Lower price",fr:"Prix plus bas"},{en:"Guaranteed ride home",fr:"Retour garanti"},
+  {en:"Verified student profiles",fr:"Profils étudiants vérifiés"},{en:"Shorter wait",fr:"Attente plus courte"},
+  {en:"Door-to-door pickup",fr:"Prise en charge porte-à-porte"},{en:"University discount",fr:"Réduction universitaire"},
+  {en:"Priority parking on campus",fr:"Stationnement prioritaire sur le campus"},{en:"Loyalty rewards",fr:"Récompenses de fidélité"}
+];
+
+const MODES = [
+  {en:"Public transport",fr:"Transports en commun"},{en:"Private car",fr:"Voiture personnelle"},
+  {en:"Taxi",fr:"Taxi"},{en:"Walking",fr:"À pied"},
+  {en:"Bicycle/E-scooter",fr:"Vélo/Trottinette"},{en:"Shared mobility",fr:"Mobilité partagée"}
+];
+const DRIVER_INCENTIVES = [
+  {en:"A discount on my own trip",fr:"Une réduction sur mon propre trajet"},
+  {en:"A cash bonus",fr:"Une prime en argent"},
+  {en:"Loyalty points or rewards",fr:"Des points ou récompenses de fidélité"},
+  {en:"Priority parking on campus",fr:"Stationnement prioritaire sur le campus"},
+  {en:"Nothing would make me detour",fr:"Rien ne me ferait faire un détour",opt_out:true}
+];
+const STATION_INCENTIVES = [
+  {en:"A discount on my trip",fr:"Une réduction sur mon trajet"},
+  {en:"A cash bonus",fr:"Une prime en argent"},
+  {en:"A guaranteed parking spot",fr:"Une place de stationnement garantie"},
+  {en:"Loyalty points or rewards",fr:"Des points ou récompenses de fidélité"},
+  {en:"Nothing would make it worth it",fr:"Rien ne rendrait cela intéressant",opt_out:true}
+];
+// English labels of the "opt-out" rank items (they behave as mutually exclusive: picking one clears the rest and counts as a complete answer).
+const RANK_OPTOUTS = new Set([...DRIVER_INCENTIVES, ...STATION_INCENTIVES].filter(o=>o.opt_out).map(o=>o.en));
+
+/* ============================================================
+   PART B — THE ENGINE  (you rarely need to touch below)
+   ============================================================ */
+let lang = "en";
+const state = { answers:{} };
+const ROUTE_CACHE = {}, MAPS = {}, STMAP = {};
+
+function t(v){ if(v && typeof v==="object" && !Array.isArray(v) && (v.en!==undefined||v.fr!==undefined)) return v[lang]!==undefined?v[lang]:v.en; return v; }
+function ui(k){ return UI[lang][k]; }
+
+const flagFR = '<svg width="46" height="32" viewBox="0 0 46 32" style="border-radius:5px;border:1px solid var(--line)"><rect width="15.33" height="32" fill="#0055A4"/><rect x="15.33" width="15.33" height="32" fill="#fff"/><rect x="30.66" width="15.34" height="32" fill="#EF4135"/></svg>';
+const flagGB = '<svg width="46" height="32" viewBox="0 0 60 40" style="border-radius:5px;border:1px solid var(--line)"><rect width="60" height="40" fill="#012169"/><path d="M0,0 L60,40 M60,0 L0,40" stroke="#fff" stroke-width="9"/><path d="M0,0 L60,40 M60,0 L0,40" stroke="#C8102E" stroke-width="4"/><rect x="25" width="10" height="40" fill="#fff"/><rect y="15" width="60" height="10" fill="#fff"/><rect x="27" width="6" height="40" fill="#C8102E"/><rect y="17" width="60" height="6" fill="#C8102E"/></svg>';
+
+function modeIcon(key){
+  const c=MODE_INFO[key].color;
+  const paths={
+    pt:'<rect x="5" y="3" width="14" height="14" rx="3"/><line x1="5" y1="11" x2="19" y2="11"/><circle cx="8" cy="20" r="1.4"/><circle cx="16" cy="20" r="1.4"/>',
+    taxi:'<path d="M4 13l1.5-4.5A2 2 0 017.4 7h9.2a2 2 0 011.9 1.5L20 13v5h-2v-2H6v2H4z"/><rect x="9" y="3.5" width="6" height="2.4" rx="0.6"/>',
+    caride:'<path d="M4 13l1.5-4.5A2 2 0 017.4 7h9.2a2 2 0 011.9 1.5L20 13v5h-2v-2H6v2H4z"/><circle cx="8.5" cy="16" r="1"/><circle cx="15.5" cy="16" r="1"/>',
+    car:'<path d="M4 13l1.5-4.5A2 2 0 017.4 7h9.2a2 2 0 011.9 1.5L20 13v5h-2v-2H6v2H4z"/>'
+  };
+  return '<div class="icon" style="border-color:'+c+';color:'+c+'"><svg viewBox="0 0 24 24" fill="none" stroke="'+c+'" stroke-width="1.7" stroke-linecap="round" stroke-linejoin="round" style="width:20px;height:20px">'+paths[key]+'</svg></div>';
+}
+function attrIcon(tp,c){
+  const p={ clock:'<circle cx="12" cy="12" r="8"/><path d="M12 8v4l3 2"/>',
+    euro:'<path d="M16 8a5 5 0 100 8"/><line x1="4" y1="11" x2="13" y2="11"/><line x1="4" y1="14" x2="11" y2="14"/>',
+    walk:'<circle cx="13" cy="4" r="1.6"/><path d="M11 8l3 2-1 4 2 4"/><path d="M13 14l-3 5"/><path d="M11 9l-3 2"/>',
+    wait:'<path d="M7 3h10M7 21h10M8 3c0 5 8 5 8 9s-8 4-8 9"/>',
+    pin:'<path d="M12 21s7-6 7-11a7 7 0 10-14 0c0 5 7 11 7 11z"/><circle cx="12" cy="10" r="2.4"/>',
+    users:'<circle cx="9" cy="8" r="3"/><path d="M3.5 20c0-3 2.7-5 5.5-5s5.5 2 5.5 5"/><path d="M16 5.5a3 3 0 010 5.5"/><path d="M21 20c0-2.4-1.7-3.9-3.6-4.4"/>' };
+  return '<svg class="ai" viewBox="0 0 24 24" fill="none" stroke="'+c+'" stroke-width="1.7" stroke-linecap="round" stroke-linejoin="round">'+p[tp]+'</svg>';
+}
+
+function buildScreens(){
+  const S=[];
+  if(state.answers.caride_block==null) state.answers.caride_block = (Math.random()<0.5 ? "1" : "2");
+  if(state.answers.station_id && state.answers.mode_dests==null){
+    // Always use the same three policy-relevant destinations.
+    // Route data comes from the pre-calculated R export where available.
+    state.answers.mode_dests = MODE_DESTINATION_IDS.filter(did => {
+      const hasRealRoute = !!((ROUTE_GEOMETRIES[state.answers.station_id]||{})[did]);
+      const hasFallback = !!((ROUTES[state.answers.station_id]||{})[did]);
+      return hasRealRoute || hasFallback;
+    });
+  }
+
+  S.push({ key:"lang", first:true, valid:()=>true, render:()=>`
+    <div class="center">
+      <h1 style="margin-bottom:4px">Choose your language</h1>
+      <p class="muted" style="margin-bottom:24px">Choisissez votre langue</p>
+      <div class="langgrid">
+        <div class="langcard" onclick="setLang('en')">${flagGB}<div class="langname">English</div></div>
+        <div class="langcard" onclick="setLang('fr')">${flagFR}<div class="langname">Français</div></div>
+      </div>
+    </div>` });
+
+  S.push({ key:"welcome", valid:()=>true, render:()=>`
+    <span class="eyebrow">${t({en:"CaRide study",fr:"Étude CaRide"})}</span>
+    <h1>${t({en:"Help shape a new way to get to campus",fr:"Aidez à imaginer une nouvelle façon de venir sur le campus"})}</h1>
+    <p>${t({en:"CaRide is an idea for the Cité Descartes campus: one person books a shared car, and others heading the same way ride along and split the cost — a mix of car-sharing and ride-sharing in one trip.",fr:"CaRide est une idée pour le campus de la Cité Descartes : une personne réserve une voiture partagée, et d'autres allant dans la même direction l'accompagnent et partagent les frais — un mélange d'autopartage et de covoiturage en un seul trajet."})}</p>
+    <p>${t({en:"This short survey asks how you'd choose between travel options. There are no right answers.",fr:"Ce court questionnaire vous demande comment vous choisiriez entre différentes options de déplacement. Il n'y a pas de bonne réponse."})}</p>
+    <p class="muted">${t({en:"About 6–8 minutes. Your answers are anonymous.",fr:"Environ 6 à 8 minutes. Vos réponses sont anonymes."})}</p>` });
+
+  S.push({ key:"consent", valid:()=>!!state.answers.consent, render:()=>`
+    <span class="eyebrow">${t({en:"Before we start",fr:"Avant de commencer"})}</span>
+    <h2>${t({en:"Your participation",fr:"Votre participation"})}</h2>
+    <p>${t({en:"Taking part is voluntary and you can stop at any time. This survey is <strong>anonymous</strong>: we don't ask for your name, contact details, or anything that could identify you personally.",fr:"La participation est volontaire et vous pouvez arrêter à tout moment. Ce questionnaire est <strong>anonyme</strong> : nous ne demandons ni votre nom, ni vos coordonnées, ni aucune information permettant de vous identifier."})}</p>
+    <p>${t({en:"Your answers are collected only for this academic research project and are handled in line with the <strong>GDPR</strong>. They are stored securely, analysed only in aggregate, and never shared or used for any other purpose.",fr:"Vos réponses sont recueillies uniquement pour ce projet de recherche universitaire et traitées conformément au <strong>RGPD</strong>. Elles sont stockées de façon sécurisée, analysées uniquement de manière agrégée, et ne sont jamais partagées ni utilisées à d'autres fins."})}</p>
+    <label class="consent ${state.answers.consent?'sel':''}" onclick="toggleConsent()">
+      <input type="checkbox" ${state.answers.consent?'checked':''} onclick="event.preventDefault()">
+      <span>${t({en:"I understand and I agree to take part.",fr:"J'ai compris et j'accepte de participer."})}</span></label>` });
+
+  S.push({ key:"definitions", valid:()=>true, render:()=>`
+    <span class="eyebrow">${t({en:"A few words first",fr:"Quelques mots d'abord"})}</span>
+    <h2>${t({en:"What these words mean",fr:"Ce que veulent dire ces mots"})}</h2>
+    <p class="muted">${t({en:"In plain terms, so everything is clear:",fr:"En termes simples, pour que tout soit clair :"})}</p>
+    <div class="deflist">
+      <div class="defitem" style="border-left-color:var(--lavender)">
+        <div class="defterm">${t({en:"Shared mobility",fr:"Mobilité partagée"})}</div>
+        <div class="defdesc">${t({en:"Getting around by sharing vehicles or trips, instead of everyone using their own car.",fr:"Se déplacer en partageant des véhicules ou des trajets, au lieu que chacun utilise sa propre voiture."})}</div>
+      </div>
+      <div class="defitem" style="border-left-color:var(--mint)">
+        <div class="defterm">${t({en:"Ride-sharing",fr:"Covoiturage"})}</div>
+        <div class="defdesc">${t({en:"Travelling together in one car with others going the same way, and splitting the cost (e.g. BlaBlaCar).",fr:"Voyager ensemble dans une même voiture avec d'autres personnes allant dans la même direction, en partageant les frais (ex. BlaBlaCar)."})}</div>
+      </div>
+      <div class="defitem" style="border-left-color:var(--amber)">
+        <div class="defterm">${t({en:"Car-sharing",fr:"Autopartage"})}</div>
+        <div class="defdesc">${t({en:"Picking up a shared car parked nearby, driving it yourself, then returning it. You pay only for the time you use it and don't own the car (e.g. Clem').",fr:"Prendre une voiture partagée garée à proximité, la conduire soi-même, puis la rendre. Vous ne payez que le temps d'utilisation et n'êtes pas propriétaire (ex. Clem')."})}</div>
+      </div>
+      <div class="defitem key">
+        <div class="defterm">${t({en:"CaRide — our idea",fr:"CaRide — notre idée"})}</div>
+        <div class="defdesc">${t({en:"It brings the two together: one person books a shared car (car-sharing), and others going the same way ride along and split the cost (ride-sharing).",fr:"Elle réunit les deux : une personne réserve une voiture partagée (autopartage), et d'autres allant dans la même direction l'accompagnent et partagent les frais (covoiturage)."})}</div>
+      </div>
+    </div>` });
+
+  S.push({ key:"demo", valid:()=> state.answers.age && state.answers.gender && state.answers.role, render:()=>`
+    <span class="eyebrow">${t({en:"About you",fr:"À propos de vous"})}</span><h2>${t({en:"A few quick details",fr:"Quelques informations rapides"})}</h2>
+    ${radio("age",{en:"Your age group",fr:"Votre tranche d'âge"},[{en:"18–24",fr:"18–24"},{en:"25–34",fr:"25–34"},{en:"35–44",fr:"35–44"},{en:"45 and above",fr:"45 et plus"}])}
+    ${radio("gender",{en:"Gender",fr:"Genre"},[{en:"Female",fr:"Femme"},{en:"Male",fr:"Homme"}])}
+    ${radio("role",{en:"Your role on campus",fr:"Votre statut sur le campus"},[{en:"Undergraduate student",fr:"Étudiant·e en licence"},{en:"Master's student",fr:"Étudiant·e en master"},{en:"PhD student",fr:"Doctorant·e"},{en:"Researcher (post-doc)",fr:"Chercheur·se (post-doctorat)"},{en:"Faculty (professor, lecturer)",fr:"Enseignant·e (professeur, maître de conférences)"},{en:"Administrative/support staff",fr:"Personnel administratif/technique"}])}` });
+
+  S.push({ key:"ses", valid:()=> !!state.answers.budget, render:()=>`
+    <span class="eyebrow">${t({en:"About you",fr:"À propos de vous"})}</span><h2>${t({en:"Your situation",fr:"Votre situation"})}</h2>
+    <p class="muted">${t({en:"This helps us see whether the service works for people with different budgets.",fr:"Cela nous aide à voir si le service convient à des budgets différents."})}</p>
+    ${radio("budget",{en:"Roughly, your monthly budget (including any support)",fr:"Environ, votre budget mensuel (aides comprises)"},[{en:"Under €500",fr:"Moins de 500 €"},{en:"€500–€1000",fr:"500–1000 €"},{en:"€1000–€1500",fr:"1000–1500 €"},{en:"Over €1500",fr:"Plus de 1500 €"}])}` });
+
+  S.push({ key:"travel", valid:()=> postcodeOk() && state.answers.mainmode && state.answers.freq,
+    invalidMsg:()=> (!postcodeOk() ? {en:"Please enter your home postcode (5 digits, e.g. 93160) to continue.",fr:"Veuillez saisir le code postal de votre domicile (5 chiffres, ex. 93160) pour continuer."} : {en:"Please answer to continue.",fr:"Veuillez répondre pour continuer."}),
+    render:()=>`
+    <span class="eyebrow">${t({en:"Your travel",fr:"Vos déplacements"})}</span><h2>${t({en:"Getting to campus",fr:"Venir sur le campus"})}</h2>
+    <div class="pill-note">${t({en:"We only ask for your home <strong>area</strong> (postcode), never an exact address — so any distances shown later are approximate.",fr:"Nous demandons seulement votre <strong>zone</strong> d'habitation (code postal), jamais d'adresse exacte — les distances affichées plus loin sont donc approximatives."})}</div>
+    ${textInput("postcode",{en:"Home postcode <span style=\"color:var(--coral)\">*</span>",fr:"Code postal du domicile <span style=\"color:var(--coral)\">*</span>"},{en:"e.g. 93160",fr:"ex. 93160"})}
+    ${radio("mainmode",{en:"Your main way of getting to campus",fr:"Votre principal moyen pour venir sur le campus"},MODES)}
+    ${radio("mainmode2",{en:"Your second most-used way (optional)",fr:"Votre deuxième moyen le plus utilisé (facultatif)"},MODES)}
+    ${radio("freq",{en:"How often do you travel to campus?",fr:"À quelle fréquence venez-vous sur le campus ?"},[{en:"1–2 days a week",fr:"1–2 jours par semaine"},{en:"3–4 days a week",fr:"3–4 jours par semaine"},{en:"5 days a week",fr:"5 jours par semaine"},{en:"More than 5 days a week",fr:"Plus de 5 jours par semaine"}])}` });
+
+  S.push({ key:"car", valid:()=> state.answers.licence && state.answers.hhcars && state.answers.carUse, render:()=>`
+    <span class="eyebrow">${t({en:"Cars",fr:"Voiture"})}</span><h2>${t({en:"Driving and car access",fr:"Permis et accès à une voiture"})}</h2>
+    ${radio("licence",{en:"Do you have a driving licence?",fr:"Avez-vous le permis de conduire ?"},[{en:"Yes",fr:"Oui"},{en:"No",fr:"Non"}])}
+    ${radio("hhcars",{en:"How many cars are in your household?",fr:"Combien de voitures y a-t-il dans votre foyer ?"},[{en:"0",fr:"0"},{en:"1",fr:"1"},{en:"2",fr:"2"},{en:"3 or more",fr:"3 ou plus"}])}
+    ${radio("carUse",{en:"Is there a car you can use for your own trips?",fr:"Disposez-vous d'une voiture pour vos propres trajets ?"},[{en:"Yes, whenever I need",fr:"Oui, quand j'en ai besoin"},{en:"Sometimes",fr:"Parfois"},{en:"No",fr:"Non"}])}` });
+
+  if(state.answers.licence==="Yes"){
+    S.push({ key:"role_caride", valid:()=> !!state.answers.wtd, render:()=>`
+      <span class="eyebrow">${t({en:"Your role in CaRide",fr:"Votre rôle dans CaRide"})}</span><h2>${t({en:"Driver or passenger?",fr:"Conducteur ou passager ?"})}</h2>
+      <p>${t({en:"In CaRide, the <strong>driver</strong> books the shared car and drives; <strong>passengers</strong> ride along and share the cost. Both roles matter.",fr:"Dans CaRide, le <strong>conducteur</strong> réserve la voiture partagée et conduit ; les <strong>passagers</strong> l'accompagnent et partagent les frais. Les deux rôles comptent."})}</p>
+      ${radio("wtd",{en:"If you used CaRide, would you take part as a driver, a passenger, or both?",fr:"Si vous utilisiez CaRide, participeriez-vous comme conducteur, passager, ou les deux ?"},[{en:"As the driver",fr:"Comme conducteur"},{en:"As a passenger",fr:"Comme passager"},{en:"Both driver and passenger",fr:"Les deux — conducteur et passager"},{en:"Not sure yet",fr:"Je ne sais pas encore"}])}` });
+  }
+
+  if(state.answers.licence==="Yes" && (state.answers.wtd==="As the driver" || state.answers.wtd==="Both driver and passenger")){
+    S.push({ key:"driver_q",
+      valid:()=> rankComplete("detour_incentive",DRIVER_INCENTIVES) && state.answers.detour_discount && rankComplete("station_incentive",STATION_INCENTIVES),
+      invalidMsg:()=>({en:"Please rank all the options (or tap “Nothing…”) in both ranking questions, and answer the discount question, before continuing.",fr:"Veuillez classer toutes les options (ou toucher « Rien… ») dans les deux questions de classement, et répondre à la question sur la réduction, avant de continuer."}),
+      render:()=>`
+      <span class="eyebrow">${t({en:"For drivers",fr:"Pour les conducteurs"})}</span><h2>${t({en:"A few questions about driving",fr:"Quelques questions sur la conduite"})}</h2>
+      <p>${t({en:"As a driver, you might be asked to go slightly out of your way to pick someone up, or to leave the car at a particular campus station.",fr:"En tant que conducteur, on pourrait vous demander de faire un petit détour pour prendre quelqu'un, ou de laisser la voiture à une station précise du campus."})}</p>
+      ${rankOther("detour_incentive",{en:"What would make a detour to pick up another rider worth it?",fr:"Qu'est-ce qui rendrait un détour pour prendre un passager intéressant ?"},DRIVER_INCENTIVES,"detour_incentive_other",{en:"Other (please specify)",fr:"Autre (précisez)"})}
+      ${radio("detour_discount",{en:"How big a discount on your own trip would make a short detour worth it?",fr:"Quelle réduction sur votre propre trajet rendrait un petit détour intéressant ?"},[{en:"No discount needed",fr:"Aucune réduction nécessaire"},{en:"Around 10%",fr:"Environ 10 %"},{en:"Around 25%",fr:"Environ 25 %"},{en:"50% or more",fr:"50 % ou plus"},{en:"I wouldn't detour",fr:"Je ne ferais pas de détour"}])}
+      ${rankOther("station_incentive",{en:"The system may ask you to leave the car at a specific campus station where it's needed. What would make that worth it?",fr:"Le système peut vous demander de laisser la voiture à une station précise du campus où elle est nécessaire. Qu'est-ce qui rendrait cela intéressant ?"},STATION_INCENTIVES,"station_incentive_other",{en:"Other (please specify)",fr:"Autre (précisez)"})}` });
+  }
+
+  S.push({ key:"carneed", valid:()=> hasMultiOrText("carneed","carneed_other") && state.answers.caride_help, render:()=>`
+    <span class="eyebrow">${t({en:"Cars",fr:"Voiture"})}</span><h2>${t({en:"When do you need a car?",fr:"Quand avez-vous besoin d'une voiture ?"})}</h2>
+    <p class="muted">${t({en:"Thinking back, when have you really felt you needed a car?",fr:"En y repensant, quand avez-vous vraiment ressenti le besoin d'une voiture ?"})}</p>
+    ${multiOther("carneed",{en:"For what kinds of trips have you felt you needed a car? (you can pick more than one)",fr:"Pour quels types de trajets avez-vous ressenti le besoin d'une voiture ? (vous pouvez en choisir plusieurs)"},CAR_NEED,"carneed_other",{en:"Other (please specify)",fr:"Autre (précisez)"})}
+    ${radio("caride_help",{en:"Do you think CaRide could be helpful in those situations?",fr:"Pensez-vous que CaRide pourrait être utile dans ces situations ?"},[{en:"Yes",fr:"Oui"},{en:"Maybe",fr:"Peut-être"},{en:"No",fr:"Non"}])}` });
+
+  S.push({ key:"sm_ride", valid:()=> state.answers.rideshare_used && (state.answers.rideshare_used!=="Yes" || hasMulti("sm_purpose_ride")), render:()=>`
+    <span class="eyebrow">${t({en:"Shared mobility",fr:"Mobilité partagée"})}</span><h2>${t({en:"Ride-sharing",fr:"Covoiturage"})}</h2>
+    ${radio("rideshare_used",{en:"Have you used ride-sharing before?",fr:"Avez-vous déjà fait du covoiturage ?"},[{en:"Yes",fr:"Oui"},{en:"No",fr:"Non"}],{en:"Ride-sharing = travelling together in one car with others heading the same way, and splitting the cost of the trip (e.g. BlaBlaCar).",fr:"Covoiturage = voyager ensemble dans une même voiture avec d'autres personnes allant dans la même direction, en partageant les frais du trajet (ex. BlaBlaCar)."})}
+    ${ state.answers.rideshare_used==="Yes" ? multi("sm_purpose_ride",{en:"What did you use ride-sharing for? (you can pick more than one)",fr:"Pour quoi avez-vous utilisé le covoiturage ? (vous pouvez en choisir plusieurs)"},SM_PURPOSE) : "" }` });
+
+  S.push({ key:"sm_car", valid:()=> state.answers.carshare_used && (state.answers.carshare_used!=="Yes" || hasMulti("sm_purpose_car")), render:()=>`
+    <span class="eyebrow">${t({en:"Shared mobility",fr:"Mobilité partagée"})}</span><h2>${t({en:"Car-sharing",fr:"Autopartage"})}</h2>
+    ${radio("carshare_used",{en:"Have you used car-sharing before?",fr:"Avez-vous déjà fait de l'autopartage ?"},[{en:"Yes",fr:"Oui"},{en:"No",fr:"Non"}],{en:"Car-sharing = picking up a car parked nearby that's shared by many people, driving it yourself for your trip, then returning it. You unlock it with an app and pay only for the time you use it — you don't own the car, and fuel and insurance are included (e.g. Clem').",fr:"Autopartage = prendre une voiture garée à proximité et partagée par de nombreuses personnes, la conduire vous-même pour votre trajet, puis la rendre. Vous la déverrouillez avec une application et ne payez que le temps d'utilisation — vous n'êtes pas propriétaire, et le carburant et l'assurance sont inclus (ex. Clem')."})}
+    ${ state.answers.carshare_used==="Yes" ? multi("sm_purpose_car",{en:"What did you use car-sharing for? (you can pick more than one)",fr:"Pour quoi avez-vous utilisé l'autopartage ? (vous pouvez en choisir plusieurs)"},SM_PURPOSE) : "" }` });
+
+  S.push({ key:"caride_interest", valid:()=> !!state.answers.caride_interest, render:()=>`
+    <span class="eyebrow">CaRide</span><h2>${t({en:"A reminder about CaRide",fr:"Petit rappel sur CaRide"})}</h2>
+    <p>${t({en:"You just answered about ride-sharing and car-sharing. CaRide is here to bring the two together: one person books a shared car (car-sharing), and others going the same way ride along and split the cost (ride-sharing) — all in one trip.",fr:"Vous venez de répondre sur le covoiturage et l'autopartage. CaRide réunit les deux : une personne réserve une voiture partagée (autopartage), et d'autres allant dans la même direction l'accompagnent et partagent les frais (covoiturage) — le tout en un seul trajet."})}</p>
+    ${radio("caride_interest",{en:"Would you be interested in using CaRide?",fr:"Seriez-vous intéressé·e par l'utilisation de CaRide ?"},[{en:"Yes, definitely",fr:"Oui, tout à fait"},{en:"Maybe",fr:"Peut-être"},{en:"Probably not",fr:"Probablement pas"},{en:"No",fr:"Non"}])}` });
+
+  S.push({ key:"purpose", valid:()=> PURPOSES.every((_,i)=> state.answers["purp"+i]!=null), render:()=>renderPurposes() });
+
+  S.push({ key:"explain", valid:()=>true, render:()=>`
+    <span class="eyebrow">${t({en:"How this part works",fr:"Comment ça marche"})}</span><h2>${t({en:"You'll compare travel options",fr:"Vous allez comparer des options de déplacement"})}</h2>
+    <p>${t({en:"Next we'll show a few real trips on a map. Each time you'll see the same trip with different options side by side. <strong>Click an option</strong> to highlight its route, then pick the one you would actually choose.",fr:"Nous allons vous montrer quelques trajets réels sur une carte. À chaque fois, vous verrez le même trajet avec différentes options côte à côte. <strong>Cliquez sur une option</strong> pour afficher son itinéraire, puis choisissez celle que vous prendriez réellement."})}</p>
+    <p class="muted">${t({en:"Imagine these are real choices for that day.",fr:"Imaginez que ce sont de vrais choix pour ce jour-là."})}</p>` });
+
+  S.push({ key:"station", valid:()=> !!state.answers.station_id, render:()=>renderStation(), after:()=>afterStationMap() });
+
+  buildModeTasks().forEach(task=>{
+    S.push({ key:"task_"+task.id, render:()=>renderLabelledTask(task), after:()=>afterLabelledTask(task),
+      valid:()=> state.answers[task.id] && state.answers[task.id+"_acc"]!=null && state.answers[task.id+"_fair"]!=null && state.answers[task.id+"_safe"]!=null });
+  });
+
+  S.push({ key:"caride_intro", valid:()=>true, render:()=>`
+    <span class="eyebrow">${t({en:"CaRide in detail",fr:"CaRide en détail"})}</span><h2>${t({en:"Now, just CaRide",fr:"Maintenant, uniquement CaRide"})}</h2>
+    <p>${t({en:"These compare CaRide offers with different walking time, waiting time, price, and number of people in the car. Pick the one you'd prefer each time.",fr:"Ces comparaisons opposent des offres CaRide avec différents temps de marche, d'attente, prix et nombre de personnes dans la voiture. Choisissez à chaque fois celle que vous préférez."})}</p>` });
+
+  (CARIDE_DESIGN[state.answers.caride_block]||[]).forEach(row=>{
+    const task=designToTask(row);
+    S.push({ key:"ctask_"+row.task, render:()=>renderCarideTask(task), valid:()=> !!state.answers[task.id] });
+  });
+
+  S.push({ key:"caride_id_intro", valid:()=>true, render:()=>`
+    <span class="eyebrow">${t({en:"CaRide in detail",fr:"CaRide en détail"})}</span><h2>${t({en:"Now — who you ride with",fr:"Maintenant — avec qui vous voyagez"})}</h2>
+    <p>${t({en:"These next few are the same kind of choice, but this time pay attention to <strong>who</strong> you'd be sharing the car with.",fr:"Les suivantes sont le même type de choix, mais cette fois faites attention à <strong>qui</strong> vous partageriez la voiture."})}</p>` });
+
+  CARIDE_ID_TASKS.forEach(tk=>{ const task=idToTask(tk); S.push({ key:"cidtask_"+tk.id, render:()=>renderCarideTask(task), valid:()=> !!state.answers[tk.id] }); });
+
+  ATTITUDES.forEach(c=>{ S.push({ key:"att_"+c.id, render:()=>renderAttitudeGroup(c), valid:()=> c.items.every((it,i)=> state.answers[attKey(c.id,i,it.r)]!=null) }); });
+
+  S.push({ key:"chips", valid:()=>true, render:()=>`
+    <span class="eyebrow">${t({en:"Almost done",fr:"Presque fini"})}</span><h2>${t({en:"What would hold you back — or win you over?",fr:"Qu'est-ce qui vous freinerait — ou vous convaincrait ?"})}</h2>
+    <div class="q">${t({en:"What would make you hesitate to use CaRide? (you can pick more than one)",fr:"Qu'est-ce qui vous ferait hésiter à utiliser CaRide ? (vous pouvez en choisir plusieurs)"})}</div>
+    ${chipBlock("barriers",BARRIERS)}
+    <div class="q">${t({en:"What would make you more likely to use it? (you can pick more than one)",fr:"Qu'est-ce qui vous inciterait davantage à l'utiliser ? (vous pouvez en choisir plusieurs)"})}</div>
+    ${chipBlock("incentives",INCENTIVES)}` });
+
+  S.push({ key:"comment", valid:()=>true, render:()=>`
+    <span class="eyebrow">${t({en:"Last one",fr:"Dernière question"})}</span><h2>${t({en:"Anything you'd like to add?",fr:"Souhaitez-vous ajouter quelque chose ?"})}</h2>
+    <p>${t({en:"Optional — any thoughts about CaRide or your trips to campus.",fr:"Facultatif — vos remarques sur CaRide ou vos trajets vers le campus."})}</p>
+    ${textArea("comment",{en:"Type here…",fr:"Écrivez ici…"})}` });
+
+  S.push({ key:"done", valid:()=>true, last:true, after:()=>submitResponses(), render:()=>`
+    <div class="center">
+      <div class="big-check"><svg width="30" height="30" viewBox="0 0 24 24" fill="none" stroke="#34B27B" stroke-width="2.4" stroke-linecap="round" stroke-linejoin="round"><path d="M20 6L9 17l-5-5"/></svg></div>
+      <h2>${t({en:"Thank you!",fr:"Merci !"})}</h2>
+      <p id="save_status" class="save-status todo">${t({en:"Saving your responses…",fr:"Enregistrement de vos réponses…"})}</p>
+      <p class="muted" style="margin-top:16px">${t({en:"You can also keep a copy of your own answers:",fr:"Vous pouvez aussi garder une copie de vos réponses :"})}</p>
+      <button class="btn btn-ghost" onclick="downloadCSV()" style="margin:6px 4px">${ui("dlCSV")}</button>
+      <button class="btn btn-ghost" onclick="downloadJSON()" style="margin:6px 4px">${ui("dlJSON")}</button></div>` });
+
+  return S;
+}
+
+/* -------- reusable renderers -------- */
+function radio(name,label,opts,sub){
+  return `<div class="q">${t(label)}</div>${sub?`<div class="lk-eg" style="margin-top:-4px">${t(sub)}</div>`:''}<div class="options">` +
+    opts.map(o=>{ const v=o.en; return `<div class="opt ${state.answers[name]===v?'sel':''}" onclick="pick('${name}','${esc(v)}')"><span class="dot"></span><span class="txt">${t(o)}</span></div>`; }).join("") + `</div>`;
+}
+function chipBlock(name,opts){
+  const sel = state.answers[name] || [];
+  return `<div class="chips">` + opts.map(o=>{ const v=o.en; return `<div class="chip ${sel.includes(v)?'sel':''}" onclick="toggleChip('${name}','${esc(v)}')">${t(o)}</div>`; }).join("") + `</div>`;
+}
+function multi(name,label,opts){ return `<div class="q">${t(label)}</div>`+chipBlock(name,opts); }
+function hasMulti(name){ return Array.isArray(state.answers[name]) && state.answers[name].length>0; }
+function multiOther(name,label,opts,oname,oph){ return multi(name,label,opts)+`<input type="text" style="margin-top:9px" value="${state.answers[oname]||''}" placeholder="${t(oph)}" oninput="state.answers['${oname}']=this.value">`; }
+function hasMultiOrText(name,oname){ return hasMulti(name) || (state.answers[oname]&&String(state.answers[oname]).trim().length>0); }
+// Home postcode is required. Accepts a standard French 5-digit postcode (spaces ignored).
+function postcodeOk(){ return /^\d{5}$/.test(String(state.answers.postcode||"").replace(/\s/g,"")); }
+// True once the respondent has either ranked every real option, or picked the "Nothing…" opt-out.
+function rankComplete(name,opts){
+  const a = state.answers[name] || [];
+  const optout = opts.find(o=>o.opt_out);
+  if(optout && a.includes(optout.en)) return true;
+  const required = opts.filter(o=>!o.opt_out).map(o=>o.en);
+  return required.length>0 && required.every(v=>a.includes(v));
+}
+function rankBlock(name,label,opts){
+  const a = state.answers[name] || [];
+  const rows = opts.map(o=>{ const v=o.en, pos=a.indexOf(v), ranked=pos>=0;
+    return `<div class="rankitem ${o.opt_out?'optout ':''}${ranked?'sel':''}" onclick="rankToggle('${name}','${esc(v)}')"><span class="rankbadge">${ranked?(pos+1):''}</span><span class="txt">${t(o)}</span></div>`; }).join("");
+  const callout = `<div class="rank-callout"><span class="rk-ic">⇅</span><span>${t({en:"This one is a <u>ranking</u>, not a single choice. Please tap the options <strong>in order of preference</strong> — most important first — until they are all numbered. Tap an option again to remove it.",fr:"Ici il s'agit d'un <u>classement</u>, pas d'un choix unique. Touchez les options <strong>par ordre de préférence</strong> — la plus importante d'abord — jusqu'à ce qu'elles soient toutes numérotées. Touchez à nouveau une option pour la retirer."})}</span></div>`;
+  // live status counter
+  const optout = opts.find(o=>o.opt_out);
+  const optChosen = optout && a.includes(optout.en);
+  const total = opts.filter(o=>!o.opt_out).length;
+  const done = a.filter(v=>!RANK_OPTOUTS.has(v)).length;
+  const complete = rankComplete(name,opts);
+  let status;
+  if(optChosen){
+    status = `<div class="rank-status done">✓ ${t({en:"Answer recorded",fr:"Réponse enregistrée"})}</div>`;
+  } else {
+    status = `<div class="rank-status ${complete?'done':'todo'}">${complete?'✓ ':''}${t({en:`${done} of ${total} ranked`,fr:`${done} sur ${total} classées`})}</div>`;
+  }
+  return `<div class="q">${t(label)}</div>${callout}<div class="ranklist">${rows}</div>${status}`;
+}
+function rankOther(name,label,opts,oname,oph){ return rankBlock(name,label,opts)+`<input type="text" style="margin-top:9px" value="${state.answers[oname]||''}" placeholder="${t(oph)}" oninput="state.answers['${oname}']=this.value">`; }
+function rankToggle(name,val){
+  let a = state.answers[name] || [];
+  if(RANK_OPTOUTS.has(val)){
+    // Opt-out is mutually exclusive: selecting it clears everything else; tapping it again clears it.
+    a = a.includes(val) ? [] : [val];
+  } else {
+    // Selecting a real option removes any opt-out, then toggles this option on/off.
+    a = a.filter(v=>!RANK_OPTOUTS.has(v));
+    const i=a.indexOf(val); if(i>=0)a.splice(i,1); else a.push(val);
+  }
+  state.answers[name]=a; refresh();
+}
+function textInput(name,label,ph){ return `<div class="q">${t(label)}</div><input type="text" value="${state.answers[name]||''}" placeholder="${t(ph)}" oninput="state.answers['${name}']=this.value">`; }
+function textArea(name,ph){ return `<textarea rows="4" placeholder="${t(ph)}" oninput="state.answers['${name}']=this.value">${state.answers[name]||''}</textarea>`; }
+
+const STCOL = { exist:"#E9B454", camp:"#34B27B" };
+function originOf(task){
+  if(state.answers.station_lat!=null) return { name: state.answers.station_name, lat: state.answers.station_lat, lng: state.answers.station_lon };
+  return { name: task.od.o.name, lat: task.od.o.lat, lng: task.od.o.lng };
+}
+function renderStation(){
+  const rows = STATIONS.map((s,i)=>{
+    const ex = s.type==="exist";
+    const pinStyle = ex ? "background:#E9B454;box-shadow:0 0 0 2px #B67F14" : "background:#34B27B";
+    return `<div class="strow ${state.answers.station_id===s.id?'sel':''}" data-id="${s.id}" onclick="selectStation('${s.id}')">
+      <span class="stpin" style="${pinStyle}">${ex?'★':i}</span>
+      <span><span class="stname">${s.name}</span><br><span class="stmeta">${t(s.sub)}</span></span></div>`;
+  }).join("");
+  const chosen = state.answers.station_id ? (t({en:"Your starting point: ",fr:"Votre point de départ : "})+"<strong>"+(state.answers.station_name||"")+"</strong>") : "";
+  return `<span class="eyebrow">${t({en:"Your trips",fr:"Vos trajets"})}</span>
+    <h2>${t({en:"Your campus starting point",fr:"Votre point de départ sur le campus"})}</h2>
+    <p>${t({en:"All the trips in this part start from campus. CaRide would have several stations across the Cité Descartes campus — in different locations and with different capacities — so some may be more convenient for you than others. Pick the one you think you'd most likely use. It becomes the starting point for the trips on the next screens.",fr:"Tous les trajets de cette partie partent du campus. CaRide disposerait de plusieurs stations réparties sur le campus de la Cité Descartes — à différents endroits et avec des capacités différentes — donc certaines pourraient être plus pratiques que d'autres pour vous. Choisissez celle que vous pensez utiliser le plus probablement. Elle deviendra le point de départ des trajets des écrans suivants."})}</p>
+    <div class="stlegend">
+      <span class="lg"><span class="stdot" style="background:#E9B454;box-shadow:0 0 0 2px #B67F14"></span>${t({en:"Existing Clem hub",fr:"Station Clem existante"})}</span>
+      <span class="lg"><span class="stdot" style="background:#34B27B"></span>${t({en:"Proposed campus station",fr:"Station proposée"})}</span>
+    </div>
+    <div class="stmap" id="station_map"></div>
+    <div class="stlist" id="station_list">${rows}</div>
+    <p class="muted" id="station_chosen" style="margin-top:12px" ${state.answers.station_id?'':'hidden'}>${chosen}</p>`;
+}
+function afterStationMap(){
+  const el=document.getElementById('station_map'); if(!el) return;
+  if(typeof L==="undefined"){ el.innerHTML='<div class="map-fallback">'+t({en:"The map appears when you open this file in a browser that's online.",fr:"La carte apparaît lorsque vous ouvrez ce fichier dans un navigateur connecté à Internet."})+'</div>'; return; }
+  if(STMAP.map){ try{ STMAP.map.remove(); }catch(e){} }
+  const map=L.map(el,{scrollWheelZoom:true});
+  L.tileLayer('https://{s}.tile.openstreetmap.org/{z}/{x}/{y}.png',{maxZoom:19,attribution:'© OpenStreetMap'}).addTo(map);
+  const bounds=[]; STMAP.markers={};
+  STATIONS.forEach(st=>{ const isEx=st.type==="exist";
+    const m=L.circleMarker([st.lat,st.lon],{radius:isEx?11:9, weight:isEx?3:2, color:isEx?"#B67F14":STCOL[st.type], fillColor:STCOL[st.type], fillOpacity:.95}).addTo(map);
+    m.on('click',()=>selectStation(st.id)); STMAP.markers[st.id]=m; bounds.push([st.lat,st.lon]);
+  });
+  map.fitBounds(bounds,{padding:[40,40],maxZoom:15}); STMAP.map=map;
+  if(state.answers.station_id) selectStation(state.answers.station_id);
+}
+function selectStation(id){
+  const s=STATIONS.find(x=>x.id===id); if(!s) return;
+  const changed = state.answers.station_id !== s.id;
+
+  state.answers.station_id=s.id; state.answers.station_name=s.name;
+  state.answers.station_type=(s.type==="exist"?"existing_clem":"campus_candidate");
+  state.answers.station_lat=s.lat; state.answers.station_lon=s.lon;
+
+  // If the respondent goes back and changes station, discard their earlier
+  // mode-choice answers and rebuild the dynamic mode-task screens.
+  if(changed){
+    state.answers.mode_dests = null;
+    Object.keys(state.answers)
+      .filter(k => k.startsWith("M_EXTERNAL_CANDIDATE_"))
+      .forEach(k => delete state.answers[k]);
+  }
+
+  // Rebuild now: otherwise the old screen list contains no mode tasks.
+  SCREENS = buildScreens();
+
+  if(STMAP.markers) Object.entries(STMAP.markers).forEach(([sid,m])=>{ const st=STATIONS.find(x=>x.id===sid), isEx=st.type==="exist", on=sid===id;
+    m.setStyle({radius:on?13:(isEx?11:9), weight:on?4:(isEx?3:2), color:on?"#1B2A4A":(isEx?"#B67F14":STCOL[st.type])}); });
+  document.querySelectorAll('#station_list .strow').forEach(r=> r.classList.toggle('sel', r.dataset.id===id));
+  const lab=document.getElementById('station_chosen'); if(lab){ lab.hidden=false; lab.innerHTML=t({en:"Your starting point: ",fr:"Votre point de départ : "})+"<strong>"+s.name+"</strong>"; }
+  document.getElementById('hint').textContent='';
+}
+
+function routeBundleFor(originId,destinationId){
+  return (ROUTE_GEOMETRIES[originId]||{})[destinationId] || null;
+}
+
+function ptOptionsForBundle(bundle){
+  if(!bundle) return [];
+  if(Array.isArray(bundle.pt_options) && bundle.pt_options.length){
+    return bundle.pt_options;
+  }
+  // Backward-compatible fallback: older route exports contain one PT route only.
+  if(bundle.pt){
+    return [{id:"pt_1",label:"Public transport",metrics:bundle.pt.metrics||{},features:bundle.pt.features||[],steps:[]}];
+  }
+  return [];
+}
+
+function ptCardKey(ptId){
+  return "pt:" + ptId;
+}
+
+function isPtChoice(key){
+  return typeof key === "string" && key.startsWith("pt:");
+}
+
+function ptIdFromChoice(key){
+  return isPtChoice(key) ? key.slice(3) : null;
+}
+
+function firstChoiceKey(task){
+  const keys = Object.keys(task.alternatives || {});
+  return keys.length ? keys[0] : null;
+}
+
+function ptFareText(metrics){
+  const value = Number(metrics && metrics.price_value);
+  if(Number.isFinite(value) && value > 0){
+    return lang === "fr"
+      ? value.toFixed(2).replace(".", ",") + " € (aller simple)"
+      : "€" + value.toFixed(2) + " single fare";
+  }
+  return (metrics && metrics.price_label) || t({en:"Fare to check",fr:"Tarif à vérifier"});
+}
+
+function routeSummaryFromBundle(bundle){
+  const get=(key)=>{
+    const m=(bundle && bundle[key] && bundle[key].metrics) || {};
+    if(!bundle || !bundle[key]) return null;
+    return {
+      total:Number(m.total_min || 0),
+      walk:Number(m.walking_min || 0),
+      wait:Number(m.waiting_min || 0),
+      transfers:Number(m.transfers || 0),
+      cost:m.price_label || ""
+    };
+  };
+  return {car:get("car"),taxi:get("taxi"),caride:get("caride")};
+}
+
+function ptAccess(pt){
+  const tr=Number(pt.transfers||0);
+  return {
+    en: Math.round(Number(pt.walking_min||0))+" min walk · "+(tr===0?"direct":(tr+" change"+(tr>1?"s":""))),
+    fr: Math.round(Number(pt.walking_min||0))+" min à pied · "+(tr===0?"direct":(tr+" correspondance"+(tr>1?"s":"")))
+  };
+}
+
+function buildAlts(routeBundle){
+  const A={};
+
+  // Each public-transport itinerary becomes its own choice card.
+  ptOptionsForBundle(routeBundle).forEach(route=>{
+    const m=route.metrics || {};
+    A[ptCardKey(route.id)] = {
+      kind:"pt",
+      ptRoute:route,
+      label:{en:route.label || "Public transport", fr:route.label || "Transport public"},
+      time:{en:Math.round(Number(m.total_min||0))+" min", fr:Math.round(Number(m.total_min||0))+" min"},
+      cost:{en:ptFareText(m), fr:ptFareText(m)},
+      access:ptAccess(m)
+    };
+  });
+
+  const R=routeSummaryFromBundle(routeBundle);
+  if(R.taxi)   A.taxi  ={kind:"taxi", time:{en:Math.round(R.taxi.total)+" min",fr:Math.round(R.taxi.total)+" min"}, cost:{en:R.taxi.cost||"€25",fr:R.taxi.cost||"25 €"}, access:{en:Math.round(R.taxi.wait)+" min wait · door to door",fr:Math.round(R.taxi.wait)+" min d'attente · porte-à-porte"}};
+  if(R.caride) A.caride={kind:"caride", time:{en:Math.round(R.caride.total)+" min",fr:Math.round(R.caride.total)+" min"}, cost:{en:R.caride.cost||"€5",fr:R.caride.cost||"5 €"}, access:{en:Math.round(R.caride.walk)+" min walk · "+Math.round(R.caride.wait)+" min wait",fr:Math.round(R.caride.walk)+" min à pied · "+Math.round(R.caride.wait)+" min d'attente"}};
+  if(R.car)    A.car   ={kind:"car", time:{en:Math.round(R.car.total)+" min",fr:Math.round(R.car.total)+" min"}, cost:{en:R.car.cost||"Fuel + parking",fr:R.car.cost||"Carburant + stationnement"}, access:{en:"leave any time",fr:"départ à tout moment"}};
+
+  return A;
+}
+
+function buildModeTasks(){
+  const o=state.answers.station_id;
+  if(!o || !state.answers.mode_dests) return [];
+
+  return state.answers.mode_dests.map(did=>{
+    const taskId="M_"+did;
+    const routeBundle=routeBundleFor(o,did);
+    if(!routeBundle) return null;
+
+    const alternatives=buildAlts(routeBundle);
+    if(!Object.keys(alternatives).length) return null;
+
+    const dest=DESTINATIONS[did];
+    return {
+      id:taskId,
+      title:{en:"Trip to "+dest.name, fr:"Trajet vers "+dest.name},
+      context:{en:"A "+dest.cat.en+" trip, starting from your campus station.", fr:"Un trajet vers un "+dest.cat.fr+", au départ de votre station."},
+      od:{
+        o:{name:state.answers.station_name,lat:state.answers.station_lat,lng:state.answers.station_lon},
+        d:{name:dest.name,lat:dest.lat,lng:dest.lon}
+      },
+      routeBundle:routeBundle,
+      alternatives:alternatives
+    };
+  }).filter(Boolean);
+}
+
+function htmlEscape(value){
+  return String(value==null?"":value)
+    .replace(/&/g,"&amp;").replace(/</g,"&lt;").replace(/>/g,"&gt;")
+    .replace(/"/g,"&quot;").replace(/'/g,"&#039;");
+}
+
+function ptStepKind(type){
+  const labels={
+    walking:{en:"Walk",fr:"Marche"},
+    transfer:{en:"Transfer",fr:"Correspondance"},
+    waiting:{en:"Wait",fr:"Attente"},
+    public_transport:{en:"Ride",fr:"Trajet"}
+  };
+  return t(labels[type]||{en:"Route",fr:"Itinéraire"});
+}
+
+function ptStepText(step){
+  const label=htmlEscape(step.label||"");
+  const from=htmlEscape(step.from||"");
+  const to=htmlEscape(step.to||"");
+  if(from && to) return `${label}${label?": ":""}${from} → ${to}`;
+  return label || t({en:"Route section",fr:"Étape du trajet"});
+}
+
+function ptStepKind(type){
+  const labels={
+    walking:{en:"Walk",fr:"Marche"},
+    transfer:{en:"Transfer",fr:"Correspondance"},
+    waiting:{en:"Wait",fr:"Attente"},
+    public_transport:{en:"Ride",fr:"Trajet"}
+  };
+  return t(labels[type]||{en:"Route",fr:"Itinéraire"});
+}
+
+function ptStepText(step){
+  const label=htmlEscape(step.label||"");
+  const from=htmlEscape(step.from||"");
+  const to=htmlEscape(step.to||"");
+  if(from && to) return `${label}${label?": ":""}${from} → ${to}`;
+  return label || t({en:"Route section",fr:"Étape du trajet"});
+}
+
+function ptStepsHTML(route){
+  const steps=(route.steps||[])
+    .filter(step=>["walking","transfer","waiting","public_transport"].includes(String(step.type||"").toLowerCase()))
+    .map(step=>`<li class="pt-step">
+      <span class="pt-step-kind">${ptStepKind(String(step.type||"").toLowerCase())}</span>
+      <span class="pt-step-main">${ptStepText(step)}</span>
+      <span class="pt-step-time">${step.duration_min!=null?Math.round(Number(step.duration_min))+" min":""}</span>
+    </li>`)
+    .join("");
+
+  if(!steps) return "";
+
+  return `<div class="pt-detail">
+    <div class="pt-detail-title">${t({en:"Route details",fr:"Détails de l’itinéraire"})}</div>
+    <ol class="pt-steps">${steps}</ol>
+  </div>`;
+}
+
+function mapLegendHTML(){
+  return `<div class="map-legend">
+    <span class="map-legend-item"><span class="legend-line legend-walk"></span>${t({en:"Walking",fr:"Marche"})}</span>
+    <span class="map-legend-item"><span class="legend-line legend-ride-a"></span><span class="legend-line legend-ride-b"></span>${t({en:"Vehicle legs",fr:"Tronçons en véhicule"})}</span>
+    <span class="map-legend-item"><span class="legend-transfer"></span>${t({en:"Transfer",fr:"Correspondance"})}</span>
+  </div>`;
+}
+
+function renderLabelledTask(task){
+  const keys=Object.keys(task.alternatives).filter(k=>{
+    return !(k==="car" && !(state.answers.licence==="Yes" && state.answers.carUse!=="No"));
+  });
+
+  const cards=keys.map(k=>{
+    const a=task.alternatives[k];
+    const selected=state.answers[task.id]===k;
+    const pt= a.kind==="pt";
+    const header=pt ? t(a.label) : t(MODE_INFO[k].name);
+    const icon=modeIcon(pt ? "pt" : k);
+    const detail=pt && selected ? ptStepsHTML(a.ptRoute) : "";
+    const fareNote=pt && selected
+      ? `<div class="muted" style="padding:0 16px 10px;font-size:12px">${t({en:"Shown fare: full-price single ticket, one direction; a Navigo/Imagine R pass may change your personal cost.",fr:"Tarif affiché : billet unitaire plein tarif, aller simple ; un forfait Navigo/Imagine R peut modifier votre coût personnel."})}</div>`
+      : "";
+
+    return `<div class="alt ${selected?"sel":""} ${pt?"pt-card":""}" data-mode="${k}" onclick="selectLabelled('${task.id}','${k}')">
+      <div class="alt-head">
+        ${icon}
+        <span class="alt-name">${header}</span>
+      </div>
+      <div class="alt-rows">
+        <div class="row"><span class="k">${attrIcon('clock','#8B7AE0')} ${ui("rowTime")}</span><span class="v">${t(a.time)}</span></div>
+        <div class="row"><span class="k">${attrIcon('euro','#34B27B')} ${ui("rowCost")}</span><span class="v">${t(a.cost)}</span></div>
+        <div class="row"><span class="k">${attrIcon('pin','#E9B454')} ${ui("rowAccess")}</span><span class="v">${t(a.access)}</span></div>
+      </div>
+      ${detail}
+      ${fareNote}
+    </div>`;
+  }).join("");
+
+  const followups=state.answers[task.id]
+    ? followupsHTML(task)
+    : `<p class="muted" style="margin-top:14px">${ui("pickAbove")}</p>`;
+
+  return `<span class="eyebrow">${t(task.title)}</span>
+    <h2>${ui("whichChoose")}</h2>
+    <p>${t(task.context)}</p>
+    <div class="tripmap" id="map_${task.id}"></div>
+    <p class="muted" style="margin:-4px 0 6px">${ui("mapCap")(originOf(task).name, task.od.d.name)}</p>
+    ${mapLegendHTML()}
+    <p class="muted" id="mapnote_${task.id}" style="margin:0 0 14px"></p>
+    <div class="alts" id="alts_${task.id}">${cards}</div>
+    <div id="fu_${task.id}">${followups}</div>`;
+}
+
+function followupsHTML(task){
+  return `<div style="margin-top:22px; border-top:1px solid var(--line); padding-top:16px">
+    <div class="q" style="margin-top:0">${ui("followHead")}</div>
+    ${ratingScale(task.id+"_acc",ui("accQ"),ui("accDef"))}
+    ${ratingScale(task.id+"_fair",ui("fairQ"),ui("fairDef"))}
+    ${ratingScale(task.id+"_safe",ui("safeQ"),ui("safeDef"))}
+  </div>`;
+}
+
+function selectLabelled(id,key){
+  state.answers[id]=key;
+  // Re-render so selected PT route details and fare note appear in its own card.
+  refresh();
+  document.getElementById('hint').textContent='';
+}
+
+function designToTask(row){
+  const mk=(o)=>({
+    walk:{en:o.walk+" min walk",fr:o.walk+" min à pied"},
+    wait:{en:o.wait+" min wait",fr:o.wait+" min d'attente"},
+    cost:{en:"€"+o.price,fr:o.price+" €"},
+    people:{en:o.people+" people",fr:o.people+" personnes"}
+  });
+  return { id:"caride_"+row.task,
+    title:{en:"CaRide option A or B?",fr:"Offre CaRide A ou B ?"},
+    context:{en:"Same trip, two CaRide offers. Which would you take?",fr:"Même trajet, deux offres CaRide. Laquelle prendriez-vous ?"},
+    A:mk(row.A), B:mk(row.B) };
+}
+function idToTask(tk){
+  const who=(w)=> w==="known" ? {en:"people you know",fr:"des personnes que vous connaissez"} : {en:"students or staff you don't know",fr:"des étudiants ou personnels que vous ne connaissez pas"};
+  const mk=(o)=>({
+    walk:{en:o.walk+" min walk",fr:o.walk+" min à pied"},
+    wait:{en:o.wait+" min wait",fr:o.wait+" min d'attente"},
+    cost:{en:"€"+o.price,fr:o.price+" €"},
+    people:{en:o.people+" people",fr:o.people+" personnes"},
+    who:who(o.who)
+  });
+  return { id:tk.id, title:tk.title, context:tk.context, A:mk(tk.A), B:mk(tk.B) };
+}
+function renderCarideTask(task){
+  const card=(which,d)=>{
+    const sel=state.answers[task.id]===which;
+    return `<div class="alt ${sel?'sel':''}" onclick="pick('${task.id}','${which}')">
+      <div class="alt-head">${modeIcon('caride')}<span class="alt-name">Option ${which}</span></div>
+      <div class="alt-rows">
+        <div class="row"><span class="k">${attrIcon('walk','#E9B454')} ${ui('rowWalk')}</span><span class="v">${t(d.walk)}</span></div>
+        <div class="row"><span class="k">${attrIcon('wait','#E76F60')} ${ui('rowWait')}</span><span class="v">${t(d.wait)}</span></div>
+        <div class="row"><span class="k">${attrIcon('euro','#34B27B')} ${ui('rowCost')}</span><span class="v">${t(d.cost)}</span></div>
+        <div class="row"><span class="k">${attrIcon('users','#534AB7')} ${t({en:'People in car',fr:'Personnes dans la voiture'})}</span><span class="v">${t(d.people)}</span></div>
+        ${d.who?`<div class="row"><span class="k">${attrIcon('users','#8B7AE0')} ${ui('rowSharingWith')}</span><span class="v">${t(d.who)}</span></div>`:''}
+      </div></div>`;
+  };
+  return `<span class="eyebrow">${t(task.title)}</span><h2>${ui('whichCaride')}</h2><p>${t(task.context)}</p>
+    <div class="ab">${card('A',task.A)}${card('B',task.B)}</div>`;
+}
+function ratingScale(name,label,def){
+  const labels=ui("scaleRate"), cur=state.answers[name];
+  return `<div class="rate2"><div class="rate-q">${label}</div><div class="rate-def">${def}</div>
+    <div class="scale" data-rate="${name}">${labels.map((l,i)=>`<button class="${cur===i+1?'sel':''}" onclick="selectRating('${name}',${i+1})">${l}</button>`).join("")}</div></div>`;
+}
+function selectRating(name,val){
+  state.answers[name]=val;
+  const sc=document.querySelector('.scale[data-rate="'+name+'"]');
+  if(sc) Array.from(sc.children).forEach((b,i)=> b.classList.toggle('sel', i+1===val));
+  document.getElementById('hint').textContent='';
+}
+
+function renderPurposes(){
+  const labels=ui("scalePurpose");
+  const rows = PURPOSES.map((p,i)=>`<div><div class="lk-q">${t(p.label)}</div><div class="lk-eg">${lang==="fr"?"ex.":"e.g."} ${t(p.eg)}</div>
+    <div class="scale">${labels.map((l,v)=>`<button class="${state.answers['purp'+i]===v+1?'sel':''}" onclick="pick('purp${i}',${v+1})">${l}</button>`).join("")}</div></div>`).join("");
+  return `<span class="eyebrow">${t({en:"Your trips",fr:"Vos trajets"})}</span><h2>${t({en:"How likely would you use CaRide for…",fr:"Quelle est la probabilité que vous utilisiez CaRide pour…"})}</h2>
+    <p class="muted">${t({en:"Think about each kind of trip separately.",fr:"Pensez à chaque type de trajet séparément."})}</p><div class="likert">${rows}</div>`;
+}
+
+function attKey(cid,i,r){ return "att_"+cid+"_"+(i+1)+(r?"_rev":""); }
+function renderAttitudeGroup(c){
+  const labels=ui("scaleAtt");
+  const items=c.items.map((it,i)=>{ const key=attKey(c.id,i,it.r);
+    return `<div><div class="lk-q">${t(it)}</div><div class="scale">${labels.map((l,v)=>`<button class="${state.answers[key]===v+1?'sel':''}" onclick="pick('${key}',${v+1})">${l}</button>`).join("")}</div></div>`; }).join("");
+  return `<span class="eyebrow">${t({en:"Your views",fr:"Votre avis"})}</span>
+    <span class="att-label" style="color:${c.color};background:${c.bg}">${t(c.label)}</span>
+    <h2 style="margin-top:12px">${t({en:"How much do you agree?",fr:"Dans quelle mesure êtes-vous d'accord ?"})}</h2>
+    <p class="muted">${t({en:"There are no right answers — just your honest view.",fr:"Il n'y a pas de bonne réponse — donnez simplement votre avis sincère."})}</p>
+    <div class="likert">${items}</div>`;
+}
+
+/* -------- interaction -------- */
+function setLang(l){ lang=l; idx++; window.scrollTo(0,0); refresh(); }
+function pick(name,val){ state.answers[name]=val; refresh(); }
+function toggleConsent(){ state.answers.consent=!state.answers.consent; refresh(); }
+function toggleChip(name,val){ const a=state.answers[name]||[]; const i=a.indexOf(val); if(i>=0)a.splice(i,1); else a.push(val); state.answers[name]=a; refresh(); }
+function esc(s){ return String(s).replace(/'/g,"\\'"); }
+
+/* -------- navigation -------- */
+let SCREENS=buildScreens(); let idx=0;
+function refresh(){
+  SCREENS=buildScreens();
+  const s=SCREENS[idx];
+  document.getElementById("screen").innerHTML=s.render();
+  if(s.after) setTimeout(s.after,0);
+  document.getElementById("progress").innerHTML=SCREENS.map((_,i)=> i<idx?'<div class="seg done"></div>':i===idx?'<div class="seg current"></div>':'<div class="seg"></div>').join("");
+  const back=document.getElementById("backBtn"), next=document.getElementById("nextBtn");
+  if(s.first){ back.style.visibility="hidden"; next.style.visibility="hidden"; }
+  else { back.style.visibility = idx===0?"hidden":"visible"; next.style.visibility = s.last?"hidden":"visible"; }
+  back.textContent=ui("back"); next.textContent=s.last?ui("finish"):ui("cont");
+  document.getElementById("hint").textContent="";
+}
+document.getElementById("nextBtn").onclick=()=>{ const s=SCREENS[idx]; if(!s.valid()){ document.getElementById("hint").textContent = s.invalidMsg ? t(s.invalidMsg()) : ui("answer"); return; } if(idx<SCREENS.length-1){ idx++; window.scrollTo(0,0); refresh(); } };
+document.getElementById("backBtn").onclick=()=>{ if(idx>0){ idx--; window.scrollTo(0,0); refresh(); } };
+
+/* -------- map -------- */
+function ptLegColor(index){
+  const palette=["#14B8A6","#8B5CF6","#F97316","#EC4899"];
+  const i=Math.max(0,Number(index||1)-1);
+  return palette[i % palette.length];
+}
+
+function routeStyleFor(choiceKey){
+  return function(feature){
+    const p=feature.properties||{};
+    const kind=String(p.segment_type||p.mode||"other").toLowerCase();
+
+    if(isPtChoice(choiceKey)){
+      if(kind==="public_transport"){
+        return {
+          color:ptLegColor(p.leg_index),
+          weight:6,
+          opacity:0.98,
+          lineCap:"round",
+          lineJoin:"round"
+        };
+      }
+
+      if(kind==="street_network" || kind==="walking" || kind==="transfer"){
+        return {
+          color:"#0EA5E9",
+          weight:5,
+          opacity:1,
+          dashArray:"1 11",
+          lineCap:"round",
+          lineJoin:"round"
+        };
+      }
+
+      return {color:"#64748B",weight:4,opacity:0.85};
+    }
+
+    const mode=isPtChoice(choiceKey) ? "pt" : choiceKey;
+    return {color:MODE_INFO[mode].color,weight:6,opacity:0.95,lineCap:"round",lineJoin:"round"};
+  };
+}
+
+function featureCollection(features){
+  return {
+    type:"FeatureCollection",
+    features:(Array.isArray(features)?features:[]).filter(f=>f && f.geometry)
+  };
+}
+
+function mapMessage(id,message){
+  const target=document.getElementById('mapnote_'+id);
+  if(target) target.textContent=message;
+}
+
+function routeMessageFor(choiceKey,hasGeometry){
+  if(!hasGeometry){
+    return t({
+      en:"This route geometry has not been loaded. Check that caride_survey_routes.js is in the same folder as the survey HTML.",
+      fr:"La géométrie de cet itinéraire n'a pas été chargée. Vérifiez que caride_survey_routes.js se trouve dans le même dossier que le questionnaire HTML."
+    });
+  }
+  if(isPtChoice(choiceKey)){
+    return t({
+      en:"Blue dotted line = walking. Each coloured solid line is a separate vehicle leg. Yellow circles show where you change.",
+      fr:"Ligne bleue pointillée = marche. Chaque ligne colorée continue est un tronçon en véhicule distinct. Les cercles jaunes indiquent les correspondances."
+    });
+  }
+  if(choiceKey==="caride"){
+    return t({
+      en:"This map shows the CaRide vehicle route. Walking is 0 minutes here because the selected CaRide station is also the trip origin.",
+      fr:"Cette carte montre l’itinéraire du véhicule CaRide. La marche est de 0 minute ici car la station CaRide choisie est aussi l’origine du trajet."
+    });
+  }
+  return t({
+    en:"This map shows the pre-calculated road route for this option.",
+    fr:"Cette carte montre l’itinéraire routier précalculé pour cette option."
+  });
+}
+
+function lastCoordinate(geometry){
+  if(!geometry || !geometry.coordinates) return null;
+  const c=geometry.coordinates;
+  if(geometry.type==="LineString" && c.length) return c[c.length-1];
+  if(geometry.type==="MultiLineString" && c.length && c[c.length-1].length) return c[c.length-1][c[c.length-1].length-1];
+  return null;
+}
+
+function addTransferMarkers(entry,features){
+  if(entry.transferLayer){
+    entry.map.removeLayer(entry.transferLayer);
+    entry.transferLayer=null;
+  }
+
+  const layer=L.layerGroup();
+  (features||[]).forEach(feature=>{
+    const p=feature.properties||{};
+    if(!p.transfer_after) return;
+
+    const coord=lastCoordinate(feature.geometry);
+    if(!coord || coord.length<2) return;
+
+    const stop=String(p.transfer_stop||p.to||"");
+    const popup=t({en:"Change at ",fr:"Correspondance à "}) + (stop || t({en:"transfer point",fr:"point de correspondance"}));
+
+    L.circleMarker([coord[1],coord[0]],{
+      radius:8,
+      color:"#FFFFFF",
+      weight:2,
+      fillColor:"#F59E0B",
+      fillOpacity:1
+    }).bindPopup("<strong>"+htmlEscape(popup)+"</strong>").addTo(layer);
+  });
+
+  entry.transferLayer=layer;
+  if(layer.getLayers().length) layer.addTo(entry.map);
+}
+
+function afterLabelledTask(task){
+  const id=task.id, el=document.getElementById('map_'+id);
+  if(!el) return;
+
+  if(typeof L==="undefined"){
+    el.innerHTML='<div class="map-fallback">'+t({en:"The map appears when you open this file in a browser that's online.",fr:"La carte apparaît lorsque vous ouvrez ce fichier dans un navigateur connecté à Internet."})+'</div>';
+    return;
+  }
+
+  if(MAPS[id] && MAPS[id].map){
+    try{ MAPS[id].map.remove(); }catch(e){}
+  }
+
+  const o=originOf(task), d=task.od.d;
+  const map=L.map(el,{scrollWheelZoom:false}).setView([(o.lat+d.lat)/2,(o.lng+d.lng)/2],12);
+
+  L.tileLayer('https://{s}.tile.openstreetmap.org/{z}/{x}/{y}.png',{
+    maxZoom:19,
+    attribution:'© OpenStreetMap contributors'
+  }).addTo(map);
+
+  const markers=L.layerGroup().addTo(map);
+  markers.addLayer(
+    L.circleMarker([o.lat,o.lng],{radius:8,color:'#fff',weight:2,fillColor:'#34B27B',fillOpacity:1})
+      .bindPopup(t({en:"Campus origin",fr:"Origine sur le campus"}))
+  );
+  markers.addLayer(
+    L.circleMarker([d.lat,d.lng],{radius:8,color:'#fff',weight:2,fillColor:'#E76F60',fillOpacity:1})
+      .bindPopup(d.name)
+  );
+
+  MAPS[id]={map,markers,task,routeLayer:null,transferLayer:null};
+
+  const initial=state.answers[id] || firstChoiceKey(task);
+  if(initial) showRoute(id,initial);
+}
+
+function showRoute(id,choiceKey){
+  const entry=MAPS[id];
+  if(!entry) return;
+
+  const {map,markers,task}=entry;
+
+  if(entry.routeLayer){
+    map.removeLayer(entry.routeLayer);
+    entry.routeLayer=null;
+  }
+
+  if(entry.transferLayer){
+    map.removeLayer(entry.transferLayer);
+    entry.transferLayer=null;
+  }
+
+  let option=null;
+  if(isPtChoice(choiceKey)){
+    const ptId=ptIdFromChoice(choiceKey);
+    option=ptOptionsForBundle(task.routeBundle).find(x=>x.id===ptId) || null;
+  } else {
+    option=task.routeBundle && task.routeBundle[choiceKey];
+  }
+
+  const features=option && option.features;
+  const fc=featureCollection(features);
+
+  if(!fc.features.length){
+    const markerBounds=markers.getBounds();
+    if(markerBounds.isValid()) map.fitBounds(markerBounds.pad(0.25));
+    mapMessage(id,routeMessageFor(choiceKey,false));
+    return;
+  }
+
+  entry.routeLayer=L.geoJSON(fc,{
+    style:routeStyleFor(choiceKey),
+    onEachFeature:(feature,layer)=>{
+      const p=feature.properties||{};
+      const duration=p.duration_min ? '<br>'+p.duration_min+' min' : '';
+      const from=p.from ? '<br>'+htmlEscape(p.from) : '';
+      const to=p.to ? ' → '+htmlEscape(p.to) : '';
+      layer.bindPopup('<strong>'+htmlEscape(String(p.label||'Route segment'))+'</strong>'+from+to+duration);
+    }
+  }).addTo(map);
+
+  if(isPtChoice(choiceKey)){
+    addTransferMarkers(entry,fc.features);
+  }
+
+  const fittedLayers=[markers,entry.routeLayer];
+  if(entry.transferLayer && entry.transferLayer.getLayers().length) fittedLayers.push(entry.transferLayer);
+
+  const fullBounds=L.featureGroup(fittedLayers).getBounds();
+  if(fullBounds.isValid()) map.fitBounds(fullBounds.pad(0.15));
+
+  mapMessage(id,routeMessageFor(choiceKey,true));
+}
+
+/* -------- save answers -------- */
+function flatten(){ const o={lang:lang, response_id:responseId()}; for(const k in state.answers){ const v=state.answers[k]; o[k]=Array.isArray(v)?v.join(" | "):v; } return o; }
+function downloadCSV(){ const d=flatten(),keys=Object.keys(d),e=s=>`"${String(s==null?"":s).replace(/"/g,'""')}"`; saveFile(keys.map(e).join(",")+"\n"+keys.map(k=>e(d[k])).join(","),"caride_response.csv","text/csv"); }
+function downloadJSON(){ saveFile(JSON.stringify(flatten(),null,2),"caride_response.json","application/json"); }
+function saveFile(text,name,type){ const b=new Blob([text],{type}); const a=document.createElement("a"); a.href=URL.createObjectURL(b); a.download=name; a.click(); }
+
+// A stable id for this one completed response (so a duplicate send can be spotted in the Sheet).
+function responseId(){ if(!state._rid){ state._rid = "r-"+Date.now().toString(36)+"-"+Math.random().toString(36).slice(2,8); } return state._rid; }
+
+// STEP 3: send the finished response.
+// PRIMARY route: our own site's relay (netlify/functions/save.js). Respondents'
+// browsers only ever talk to our own domain, which works even on networks
+// that block Google directly. Because it's the same domain, we get an
+// honest success/failure answer back — no "sealed envelope" guessing.
+// FALLBACK route: only used when testing this file locally on your own
+// computer (there's no relay running there), so it falls back to the old
+// direct-to-Google method so your own quick tests still work.
+async function submitResponses(){
+  if(state._submitted) return;            // never send twice for the same respondent
+  const status = document.getElementById("save_status");
+  const setStatus = (msg,cls)=>{ if(status){ status.textContent=t(msg); status.className="save-status "+(cls||""); } };
+  const payload = JSON.stringify(flatten());
+  state._submitted = true;
+  setStatus({en:"Saving your responses…",fr:"Enregistrement de vos réponses…"},"todo");
+
+  try{
+    const r = await fetch(RELAY_ENDPOINT, { method:"POST", headers:{"Content-Type":"application/json"}, body: payload });
+    const data = await r.json().catch(()=>({ok:r.ok}));
+    if(r.ok && data.ok){
+      setStatus({en:"✓ Your responses have been saved. Thank you!",fr:"✓ Vos réponses ont été enregistrées. Merci !"},"done");
+      return;
+    }
+    throw new Error("relay reported failure");
+  }catch(relayErr){
+    if(!SHEET_ENDPOINT){
+      state._submitted = false;
+      setStatus({en:"We couldn't reach the server. Please check your connection, then use the download button below so your answers aren't lost.",fr:"Impossible de joindre le serveur. Vérifiez votre connexion, puis utilisez le bouton de téléchargement ci-dessous pour ne pas perdre vos réponses."},"err");
+      return;
+    }
+    // Local-testing fallback only (direct to Google, same as before).
+    fetch(SHEET_ENDPOINT,{
+      method:"POST",
+      mode:"no-cors",
+      headers:{"Content-Type":"text/plain;charset=utf-8"},
+      body: payload
+    }).then(()=>{
+      setStatus({en:"✓ Your responses have been saved. Thank you!",fr:"✓ Vos réponses ont été enregistrées. Merci !"},"done");
+    }).catch(()=>{
+      state._submitted = false;
+      setStatus({en:"We couldn't reach the server. Please check your connection, then use the download button below so your answers aren't lost.",fr:"Impossible de joindre le serveur. Vérifiez votre connexion, puis utilisez le bouton de téléchargement ci-dessous pour ne pas perdre vos réponses."},"err");
+    });
+  }
+}
+
+refresh();
+</script>
+</body>
+</html>

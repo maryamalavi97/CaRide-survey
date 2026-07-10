@@ -1,0 +1,6 @@
+# This file tells Netlify: "there's a helper program (a serverless function)
+# in the netlify/functions folder — please run it, don't just treat it as a
+# plain text file." You do not need to edit this file.
+
+[functions]
+  directory = "netlify/functions"
