@@ -393,15 +393,15 @@ const CARIDE_ID_TASKS = [
   { id:"carideid_1",
     title:{en:"CaRide: who you ride with",fr:"CaRide : avec qui vous voyagez"},
     context:{en:"Two CaRide offers for the same trip. Look at who you'd share the car with. Which would you take?",fr:"Deux offres CaRide pour le même trajet. Regardez avec qui vous partageriez la voiture. Laquelle prendriez-vous ?"},
-    A:{walk:3,wait:5,price:7,people:3,who:"known"},   B:{walk:3,wait:5,price:7,people:3,who:"unknown"} },
+    A:{walk:3,wait:5,price:5,people:3,who:"known"},   B:{walk:3,wait:5,price:3,people:3,who:"unknown"} },
   { id:"carideid_2",
     title:{en:"CaRide: who you ride with",fr:"CaRide : avec qui vous voyagez"},
     context:{en:"Two CaRide offers for the same trip. Look at who you'd share the car with. Which would you take?",fr:"Deux offres CaRide pour le même trajet. Regardez avec qui vous partageriez la voiture. Laquelle prendriez-vous ?"},
-    A:{walk:3,wait:5,price:4,people:3,who:"unknown"}, B:{walk:3,wait:5,price:8,people:3,who:"known"} },
+    A:{walk:3,wait:5,price:3,people:3,who:"unknown"}, B:{walk:3,wait:5,price:12,people:3,who:"known"} },
   { id:"carideid_3",
     title:{en:"CaRide: who you ride with",fr:"CaRide : avec qui vous voyagez"},
     context:{en:"Two CaRide offers for the same trip. Look at who you'd share the car with. Which would you take?",fr:"Deux offres CaRide pour le même trajet. Regardez avec qui vous partageriez la voiture. Laquelle prendriez-vous ?"},
-    A:{walk:3,wait:5,price:6,people:3,who:"known"},   B:{walk:3,wait:5,price:4,people:3,who:"unknown"} }
+    A:{walk:3,wait:5,price:8,people:3,who:"known"},   B:{walk:3,wait:5,price:4,people:3,who:"unknown"} }
 ];
 
 const PURPOSES = [
@@ -448,6 +448,14 @@ const CAR_NEED = [
   {en:"Travel outside the city",fr:"Déplacements hors de la ville"},
   {en:"I haven't needed a car",fr:"Je n'ai pas eu besoin de voiture"}
 ];
+// TODO: replace with the real Unlisted YouTube links once the videos are uploaded.
+const CARIDE_VIDEO = {
+  en:"https://youtu.be/T-VS7k3w48Y",
+  fr:"https://youtu.be/ByQ_gp-2fK4"
+};
+function videoLink(){
+  return `<p class="muted" style="margin-top:10px">🎬 <a href="${t(CARIDE_VIDEO)}" target="_blank" rel="noopener">${t({en:"Still not sure what CaRide is? Watch a short video (2 min)",fr:"Vous ne savez pas encore ce qu'est CaRide ? Regardez une courte vidéo (2 min)"})}</a></p>`;
+}
 const SM_PURPOSE = [
   {en:"Commuting",fr:"Trajets domicile-campus"},{en:"Shopping",fr:"Courses"},
   {en:"Leisure or social",fr:"Loisirs ou sorties"},{en:"Errands or appointments",fr:"Démarches ou rendez-vous"},
@@ -578,6 +586,7 @@ function buildScreens(){
       <div class="defitem key">
         <div class="defterm">${t({en:"CaRide: our idea",fr:"CaRide : notre idée"})}</div>
         <div class="defdesc">${t({en:"It brings the two concepts together: one person books a shared car (car-sharing), and others going the same way ride along and split the cost (ride-sharing). As the driver, you get where you're going and you still have the car to come back.",fr:"Elle réunit les deux concepts: une personne réserve une voiture partagée (autopartage), et d'autres personnes allant dans la même direction l'accompagnent et partagent les frais (covoiturage). En tant que conducteur·rice, vous allez où vous voulez et vous gardez la voiture pour le retour."})}</div>
+        ${videoLink()}
       </div>
     </div>` });
 
@@ -624,7 +633,13 @@ function buildScreens(){
   S.push({ key:"caride_interest", valid:()=> !!state.answers.caride_interest, render:()=>`
     <span class="eyebrow">CaRide</span><h2>${t({en:"A reminder about CaRide",fr:"Petit rappel sur CaRide"})}</h2>
     <p>${t({en:"You just answered about ride-sharing and car-sharing. CaRide is here to bring the two together: one person books a shared car (car-sharing), and others going the same way ride along and split the cost (ride-sharing), all in one trip.",fr:"Vous venez de répondre sur le covoiturage et l'autopartage. CaRide réunit les deux concepts : une personne réserve une voiture partagée (autopartage), et d'autres personnes allant dans la même direction l'accompagnent et partagent les frais (covoiturage), le tout en un seul trajet."})}</p>
+    ${videoLink()}
     ${radio("caride_interest",{en:"Would you be interested in using CaRide?",fr:"Seriez-vous intéressé·e par l'utilisation de CaRide ?"},[{en:"Yes, definitely",fr:"Oui, tout à fait"},{en:"Maybe",fr:"Peut-être"},{en:"Probably not",fr:"Probablement pas"},{en:"No",fr:"Non"}])}` });
+
+  S.push({ key:"rent_shared", valid:()=> state.answers.rent_shared_used && (state.answers.rent_shared_used!=="Yes" || hasMulti("rent_shared_purpose")), render:()=>`
+    <span class="eyebrow">${t({en:"Shared mobility",fr:"Mobilité partagée"})}</span><h2>${t({en:"Renting and sharing a car",fr:"Louer et partager une voiture"})}</h2>
+    ${radio("rent_shared_used",{en:"Have you ever done something similar yourself, outside of an app: rented a car together with other people and split the cost?",fr:"Avez-vous déjà fait quelque chose de similaire vous-même, en dehors d'une application : louer une voiture avec d'autres personnes et partager les frais ?"},[{en:"Yes",fr:"Oui"},{en:"No",fr:"Non"}],{en:"This is different from the car-sharing and ride-sharing apps above (e.g. Clem', BlaBlaCar). Think instead of, for example, renting a car from a rental agency with friends, family, or colleagues, and sharing the cost between you.",fr:"Ceci est différent des applications d'autopartage et de covoiturage mentionnées plus haut (ex. Clem', BlaBlaCar). Pensez plutôt, par exemple, à la location d'une voiture chez un loueur avec des amis, de la famille ou des collègues, en partageant les frais entre vous."})}
+    ${ state.answers.rent_shared_used==="Yes" ? multi("rent_shared_purpose",{en:"What was it for? (you can pick more than one)",fr:"Pour quelle occasion ? (vous pouvez en choisir plusieurs)"},SM_PURPOSE) : "" }` });
 
   S.push({ key:"carneed", valid:()=> hasMultiOrText("carneed","carneed_other") && state.answers.caride_help, render:()=>`
     <span class="eyebrow">${t({en:"Cars",fr:"Voiture"})}</span><h2>${t({en:"When do you need a car?",fr:"Quand avez-vous besoin d'une voiture ?"})}</h2>
