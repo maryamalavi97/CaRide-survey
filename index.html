@@ -620,12 +620,12 @@ function buildScreens(){
 
   S.push({ key:"caride_interest", valid:()=> !!state.answers.caride_interest, render:()=>`
     <span class="eyebrow">CaRide</span><h2>${t({en:"A reminder about CaRide",fr:"Petit rappel sur CaRide"})}</h2>
-    <p>${t({en:"You just answered about ride-sharing and car-sharing. CaRide is here to bring the two together: one person books a shared car (car-sharing), and others going the same way ride along and split the cost (ride-sharing), all in one trip.",fr:"Vous venez de répondre sur le covoiturage et l'autopartage. CaRide réunit les deux : une personne réserve une voiture partagée (autopartage), et d'autres allant dans la même direction l'accompagnent et partagent les frais (covoiturage), le tout en un seul trajet."})}</p>
+    <p>${t({en:"You just answered about ride-sharing and car-sharing. CaRide is here to bring the two together: one person books a shared car (car-sharing), and others going the same way ride along and split the cost (ride-sharing), all in one trip.",fr:"Vous venez de répondre sur le covoiturage et l'autopartage. CaRide réunit les deux concepts : une personne réserve une voiture partagée (autopartage), et d'autres personnes allant dans la même direction l'accompagnent et partagent les frais (covoiturage), le tout en un seul trajet."})}</p>
     ${radio("caride_interest",{en:"Would you be interested in using CaRide?",fr:"Seriez-vous intéressé·e par l'utilisation de CaRide ?"},[{en:"Yes, definitely",fr:"Oui, tout à fait"},{en:"Maybe",fr:"Peut-être"},{en:"Probably not",fr:"Probablement pas"},{en:"No",fr:"Non"}])}` });
 
   S.push({ key:"carneed", valid:()=> hasMultiOrText("carneed","carneed_other") && state.answers.caride_help, render:()=>`
     <span class="eyebrow">${t({en:"Cars",fr:"Voiture"})}</span><h2>${t({en:"When do you need a car?",fr:"Quand avez-vous besoin d'une voiture ?"})}</h2>
-    <p class="muted">${t({en:"Thinking back, when have you really felt you needed a car?",fr:"En y repensant, quand avez-vous vraiment ressenti le besoin d'une voiture ?"})}</p>
+    <p class="muted">${t({en:"Thinking back, when have you really felt you needed a car?",fr:"En y repensant, quand avez-vous vraiment ressenti le besoin d'utilisr une voiture ?"})}</p>
     ${multiOther("carneed",{en:"For what kinds of trips have you felt you needed a car? (you can pick more than one)",fr:"Pour quels types de trajets avez-vous ressenti le besoin d'une voiture ? (vous pouvez en choisir plusieurs)"},CAR_NEED,"carneed_other",{en:"Other (please specify)",fr:"Autre (précisez)"})}
     ${radio("caride_help",{en:"Do you think CaRide could be helpful in those situations?",fr:"Pensez-vous que CaRide pourrait être utile dans ces situations ?"},[{en:"Yes",fr:"Oui"},{en:"Maybe",fr:"Peut-être"},{en:"No",fr:"Non"}])}` });
 
