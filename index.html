@@ -406,37 +406,37 @@ const CARIDE_ID_TASKS = [
 ];
 
 const PURPOSES = [
-  { label:{en:"Shopping trips",fr:"Faire des courses"}, eg:{en:"IKEA, Centre Commercial Bay 2",fr:"IKEA, Centre Commercial Bay 2"} },
-  { label:{en:"Leisure or social trips",fr:"Loisirs ou sorties"}, eg:{en:"cinema, bowling, restaurants, meeting friends",fr:"cinéma, bowling, restaurants, retrouver des amis"} },
-  { label:{en:"Other occasional trips",fr:"Autres trajets occasionnels"}, eg:{en:"healthcare, administrative errands (préfecture, bank)",fr:"santé, démarches administratives (préfecture, banque)"} }
+  { id:"shopping", label:{en:"Shopping trips",fr:"Faire des courses"}, eg:{en:"IKEA, Centre Commercial Bay 2",fr:"IKEA, Centre Commercial Bay 2"} },
+  { id:"leisure", label:{en:"Leisure or social trips",fr:"Loisirs ou sorties"}, eg:{en:"cinema, bowling, restaurants, meeting friends",fr:"cinéma, bowling, restaurants, retrouver des amis"} },
+  { id:"other", label:{en:"Other occasional trips",fr:"Autres trajets occasionnels"}, eg:{en:"healthcare, administrative errands (préfecture, bank)",fr:"santé, démarches administratives (préfecture, banque)"} }
 ];
 
 const ATTITUDES = [
   { id:"share", label:{en:"Comfort & trust in sharing",fr:"Confort et confiance dans le partage"}, color:"#085041", bg:"#E1F5EE",
     items:[
-      { en:"I would feel <strong>comfortable</strong> sharing a car with people I don't know.", fr:"Je me sentirais <strong>à l'aise</strong> de partager une voiture avec des personnes que je ne connais pas.", r:false },
-      { en:"I think the other riders would be <strong>pleasant and respectful</strong> to travel with.", fr:"Je pense que les autres passagers seraient <strong>agréables et respectueux</strong>.", r:false },
-      { en:"Sharing a ride with <strong>people I don't know</strong> would make me uncomfortable.", fr:"Partager un trajet avec <strong>des personnes que je ne connais pas</strong> me mettrait mal à l'aise.", r:true }
+      { id:"comfortable", en:"I would feel <strong>comfortable</strong> sharing a car with people I don't know.", fr:"Je me sentirais <strong>à l'aise</strong> de partager une voiture avec des personnes que je ne connais pas.", r:false },
+      { id:"others_pleasant", en:"I think the other riders would be <strong>pleasant and respectful</strong> to travel with.", fr:"Je pense que les autres passagers seraient <strong>agréables et respectueux</strong>.", r:false },
+      { id:"strangers_uncomfortable", en:"Sharing a ride with <strong>people I don't know</strong> would make me uncomfortable.", fr:"Partager un trajet avec <strong>des personnes que je ne connais pas</strong> me mettrait mal à l'aise.", r:true }
     ]},
   { id:"safety", label:{en:"Safety & security",fr:"Sûreté et sécurité"}, color:"#712B13", bg:"#FAECE7",
     items:[
-      { en:"I would <strong>worry about my safety</strong> during a shared ride. <span class=\"lk-note\">(Safety around the other people in the car, e.g. if someone were unpleasant or aggressive, not the vehicle itself.)</span>", fr:"Je <strong>m'inquiéterais pour ma sécurité</strong> pendant un trajet partagé. <span class=\"lk-note\">(La sécurité liée aux autres personnes dans la voiture, par exemple si quelqu'un était désagréable ou agressif, pas le véhicule lui-même.)</span>", r:false },
-      { en:"I would <strong>worry about the driver's driving skills</strong> or safety on the road.", fr:"Je <strong>m'inquiéterais des compétences de conduite</strong> du conducteur ou de la sécurité routière.", r:false },
-      { en:"I would feel <strong>safe</strong> using CaRide, even at night.", fr:"Je me sentirais <strong>en sécurité</strong> en utilisant CaRide, même la nuit.", r:true },
-      { en:"Knowing who my driver would be, in advance, would make me feel <strong>safer</strong>. <span class=\"lk-note\">(About feeling less worried about accidents or dangerous driving because you know them, not just feeling socially comfortable with them.)</span>", fr:"Savoir à l'avance qui serait mon conducteur me ferait sentir <strong>plus en sécurité</strong>. <span class=\"lk-note\">(Il s'agit de vous sentir moins inquiet·ète des accidents ou d'une conduite dangereuse parce que vous connaissez cette personne, pas seulement de vous sentir à l'aise avec elle.)</span>", r:true },
-      { en:"Getting into a car with <strong>people I don't know</strong> feels risky to me.", fr:"Monter dans une voiture avec <strong>des personnes que je ne connais pas</strong> me semble risqué.", r:false }
+      { id:"worry_people", en:"I would <strong>worry about my safety</strong> during a shared ride. <span class=\"lk-note\">(Safety around the other people in the car, e.g. if someone were unpleasant or aggressive, not the vehicle itself.)</span>", fr:"Je <strong>m'inquiéterais pour ma sécurité</strong> pendant un trajet partagé. <span class=\"lk-note\">(La sécurité liée aux autres personnes dans la voiture, par exemple si quelqu'un était désagréable ou agressif, pas le véhicule lui-même.)</span>", r:false },
+      { id:"worry_driving_skill", en:"I would <strong>worry about the driver's driving skills</strong> or safety on the road.", fr:"Je <strong>m'inquiéterais des compétences de conduite</strong> du conducteur ou de la sécurité routière.", r:false },
+      { id:"safe_at_night", en:"I would feel <strong>safe</strong> using CaRide, even at night.", fr:"Je me sentirais <strong>en sécurité</strong> en utilisant CaRide, même la nuit.", r:true },
+      { id:"driver_known_safer", en:"Knowing who my driver would be, in advance, would make me feel <strong>safer</strong>. <span class=\"lk-note\">(About feeling less worried about accidents or dangerous driving because you know them, not just feeling socially comfortable with them.)</span>", fr:"Savoir à l'avance qui serait mon conducteur me ferait sentir <strong>plus en sécurité</strong>. <span class=\"lk-note\">(Il s'agit de vous sentir moins inquiet·ète des accidents ou d'une conduite dangereuse parce que vous connaissez cette personne, pas seulement de vous sentir à l'aise avec elle.)</span>", r:true },
+      { id:"strangers_risky", en:"Getting into a car with <strong>people I don't know</strong> feels risky to me.", fr:"Monter dans une voiture avec <strong>des personnes que je ne connais pas</strong> me semble risqué.", r:false }
     ]},
   { id:"env", label:{en:"Environmental motivation",fr:"Motivation environnementale"}, color:"#27500A", bg:"#EAF3DE",
     items:[
-      { en:"<strong>Reducing pollution</strong> matters to me when I choose how to travel.", fr:"<strong>Réduire la pollution</strong> compte pour moi quand je choisis comment me déplacer.", r:false },
-      { en:"I would happily share rides if it means <strong>less pollution</strong>.", fr:"Je partagerais volontiers des trajets si cela veut dire <strong>moins de pollution</strong>.", r:false },
-      { en:"Whether a trip is <strong>good for the environment</strong> doesn't really affect my choice.", fr:"Le fait qu'un trajet soit <strong>bon pour l'environnement</strong> n'influence pas vraiment mon choix.", r:true }
+      { id:"pollution_matters", en:"<strong>Reducing pollution</strong> matters to me when I choose how to travel.", fr:"<strong>Réduire la pollution</strong> compte pour moi quand je choisis comment me déplacer.", r:false },
+      { id:"share_for_pollution", en:"I would happily share rides if it means <strong>less pollution</strong>.", fr:"Je partagerais volontiers des trajets si cela veut dire <strong>moins de pollution</strong>.", r:false },
+      { id:"env_doesnt_affect_choice", en:"Whether a trip is <strong>good for the environment</strong> doesn't really affect my choice.", fr:"Le fait qu'un trajet soit <strong>bon pour l'environnement</strong> n'influence pas vraiment mon choix.", r:true }
     ]},
   { id:"openness", label:{en:"Openness to new mobility",fr:"Ouverture aux nouvelles mobilités"}, color:"#3C3489", bg:"#EEEDFE",
     items:[
-      { en:"I enjoy trying <strong>new transport apps</strong> and services.", fr:"J'aime essayer de <strong>nouvelles applis</strong> et services de transport.", r:false },
-      { en:"I am often <strong>one of the first</strong> to try a new way of getting around.", fr:"Je suis souvent <strong>parmi les premiers</strong> à essayer une nouvelle façon de me déplacer.", r:false },
-      { en:"I prefer to stick with the travel options I <strong>already know</strong>.", fr:"Je préfère m'en tenir aux options de transport que je <strong>connais déjà</strong>.", r:true }
+      { id:"enjoy_new_apps", en:"I enjoy trying <strong>new transport apps</strong> and services.", fr:"J'aime essayer de <strong>nouvelles applis</strong> et services de transport.", r:false },
+      { id:"early_adopter", en:"I am often <strong>one of the first</strong> to try a new way of getting around.", fr:"Je suis souvent <strong>parmi les premiers</strong> à essayer une nouvelle façon de me déplacer.", r:false },
+      { id:"prefer_known_options", en:"I prefer to stick with the travel options I <strong>already know</strong>.", fr:"Je préfère m'en tenir aux options de transport que je <strong>connais déjà</strong>.", r:true }
     ]}
 ];
 const CAR_NEED = [
@@ -669,7 +669,7 @@ function buildScreens(){
       ${rankOther("station_incentive",{en:"The system may ask you to leave the car at a specific campus station where it's needed. What would make that worth it?",fr:"Le système peut vous demander de laisser la voiture à une station précise du campus où elle est nécessaire. Qu'est-ce qui rendrait cela intéressant ?"},STATION_INCENTIVES,"station_incentive_other",{en:"Other (please specify)",fr:"Autre (précisez)"})}` });
   }
 
-  S.push({ key:"purpose", valid:()=> PURPOSES.every((_,i)=> state.answers["purp"+i]!=null), render:()=>renderPurposes() });
+  S.push({ key:"purpose", valid:()=> PURPOSES.every(p=> state.answers["purp_"+p.id]!=null), render:()=>renderPurposes() });
 
   S.push({ key:"station", valid:()=> !!state.answers.station_id, render:()=>renderStation(), after:()=>afterStationMap() });
 
@@ -703,7 +703,7 @@ function buildScreens(){
     <span class="eyebrow">CaRide</span><h2>${t({en:"Sharing with people you don't know",fr:"Partager avec des personnes que vous ne connaissez pas"})}</h2>
     ${radio("stranger_ok",{en:"Are you actually OK with sharing a ride with strangers?",fr:"Accepteriez-vous réellement de partager un trajet avec des inconnus ?"},[{en:"Yes, I don't mind sharing with people I don't know",fr:"Oui, cela ne me dérange pas de partager avec des personnes que je ne connais pas"},{en:"I don't mind, but I'd prefer to know them a little",fr:"Cela ne me dérange pas, mais je préférerais les connaître un peu"},{en:"No, I'd rather not share rides with people I don't know at all",fr:"Non, je préfère ne pas partager de trajets avec des personnes que je ne connais pas du tout"}])}` });
 
-  ATTITUDES.forEach(c=>{ S.push({ key:"att_"+c.id, render:()=>renderAttitudeGroup(c), valid:()=> c.items.every((it,i)=> state.answers[attKey(c.id,i,it.r)]!=null) }); });
+  ATTITUDES.forEach(c=>{ S.push({ key:"att_"+c.id, render:()=>renderAttitudeGroup(c), valid:()=> c.items.every(it=> state.answers[attKey(c.id,it.id,it.r)]!=null) }); });
 
   S.push({ key:"barriers", valid:()=>true, render:()=>`
     <span class="eyebrow">${t({en:"Almost done",fr:"Presque fini"})}</span><h2>${t({en:"What would hold you back?",fr:"Qu'est-ce qui vous freinerait ?"})}</h2>
@@ -1215,16 +1215,16 @@ function selectRating(name,val){
 
 function renderPurposes(){
   const labels=ui("scalePurpose");
-  const rows = PURPOSES.map((p,i)=>`<div><div class="lk-q">${t(p.label)}</div><div class="lk-eg">${lang==="fr"?"ex.":"e.g."} ${t(p.eg)}</div>
-    <div class="scale">${labels.map((l,v)=>`<button class="${state.answers['purp'+i]===v+1?'sel':''}" onclick="pick('purp${i}',${v+1})">${l}</button>`).join("")}</div></div>`).join("");
+  const rows = PURPOSES.map((p)=>`<div><div class="lk-q">${t(p.label)}</div><div class="lk-eg">${lang==="fr"?"ex.":"e.g."} ${t(p.eg)}</div>
+    <div class="scale">${labels.map((l,v)=>`<button class="${state.answers['purp_'+p.id]===v+1?'sel':''}" onclick="pick('purp_${p.id}',${v+1})">${l}</button>`).join("")}</div></div>`).join("");
   return `<span class="eyebrow">${t({en:"Your trips",fr:"Vos trajets"})}</span><h2>${t({en:"How likely would you use CaRide for…",fr:"Quelle est la probabilité que vous utilisiez CaRide pour…"})}</h2>
     <p class="muted">${t({en:"Think about each kind of trip separately.",fr:"Pensez à chaque type de trajet séparément."})}</p><div class="likert">${rows}</div>`;
 }
 
-function attKey(cid,i,r){ return "att_"+cid+"_"+(i+1)+(r?"_rev":""); }
+function attKey(cid,itemId,r){ return "att_"+cid+"_"+itemId+(r?"_rev":""); }
 function renderAttitudeGroup(c){
   const labels=ui("scaleAtt");
-  const items=c.items.map((it,i)=>{ const key=attKey(c.id,i,it.r);
+  const items=c.items.map((it)=>{ const key=attKey(c.id,it.id,it.r);
     return `<div><div class="lk-q">${t(it)}</div><div class="scale">${labels.map((l,v)=>`<button class="${state.answers[key]===v+1?'sel':''}" onclick="pick('${key}',${v+1})">${l}</button>`).join("")}</div></div>`; }).join("");
   return `<span class="eyebrow">${t({en:"Your views",fr:"Votre avis"})}</span>
     <span class="att-label" style="color:${c.color};background:${c.bg}">${t(c.label)}</span>
