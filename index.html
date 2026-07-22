@@ -134,6 +134,7 @@
 
   .likert{ display:flex; flex-direction:column; gap:16px; margin-top:6px; }
   .lk-q{ font-size:15px; font-weight:600; margin-bottom:8px; }
+  .lk-note{ font-size:12.5px; font-weight:400; color:var(--muted); display:block; margin-top:3px; }
   .lk-eg{ font-size:13px; color:var(--muted); font-weight:400; margin:-4px 0 8px; }
   .scale{ display:flex; gap:6px; }
   .scale button{ flex:1; border:1.5px solid var(--line); background:#fff; border-radius:10px; padding:9px 4px;
@@ -259,7 +260,7 @@ const UI = {
     rowWalk:"Walk", rowWait:"Wait", rowSharing:"Sharing",
     pickAbove:"Pick an option above to continue.",
     followHead:"Three quick follow-ups about the option you picked",
-    accQ:"How acceptable is this option to you?", accDef:"Acceptable = you'd be genuinely OK choosing it in real life.",
+    accQ:"How interesting is this option to you?", accDef:"Interesting = you'd be genuinely happy choosing it in real life.",
     fairQ:"How fair does the price feel?", fairDef:"Fair = the price seems reasonable for what you get.",
     safeQ:"How safe would you feel on this trip?", safeDef:"Safe = comfortable and secure during the journey.",
     whichChoose:"Which would you choose?", whichCaride:"Which CaRide offer do you prefer?",
@@ -274,7 +275,7 @@ const UI = {
     rowWalk:"Marche", rowWait:"Attente", rowSharing:"Partage",
     pickAbove:"Choisissez une option ci-dessus pour continuer.",
     followHead:"Trois questions rapides sur l'option choisie",
-    accQ:"Cette option vous convient-elle ?", accDef:"Acceptable = vous seriez réellement prêt·e à la choisir dans la vraie vie.",
+    accQ:"À quel point cette option vous intéresse-t-elle ?", accDef:"Intéressante = vous seriez réellement content·e de la choisir dans la vraie vie.",
     fairQ:"Le prix vous semble-t-il juste ?", fairDef:"Juste = le prix semble raisonnable pour ce que vous obtenez.",
     safeQ:"À quel point vous sentiriez-vous en sécurité ?", safeDef:"En sécurité = à l'aise et en confiance pendant le trajet.",
     whichChoose:"Que choisiriez-vous ?", whichCaride:"Quelle offre CaRide préférez-vous ?",
@@ -419,9 +420,10 @@ const ATTITUDES = [
     ]},
   { id:"safety", label:{en:"Safety & security",fr:"Sûreté et sécurité"}, color:"#712B13", bg:"#FAECE7",
     items:[
-      { en:"I would <strong>worry about my safety</strong> during a shared ride.", fr:"Je <strong>m'inquiéterais pour ma sécurité</strong> pendant un trajet partagé.", r:false },
+      { en:"I would <strong>worry about my safety</strong> during a shared ride. <span class=\"lk-note\">(Safety around the other people in the car, e.g. if someone were unpleasant or aggressive, not the vehicle itself.)</span>", fr:"Je <strong>m'inquiéterais pour ma sécurité</strong> pendant un trajet partagé. <span class=\"lk-note\">(La sécurité liée aux autres personnes dans la voiture, par exemple si quelqu'un était désagréable ou agressif, pas le véhicule lui-même.)</span>", r:false },
+      { en:"I would <strong>worry about the driver's driving skills</strong> or safety on the road.", fr:"Je <strong>m'inquiéterais des compétences de conduite</strong> du conducteur ou de la sécurité routière.", r:false },
       { en:"I would feel <strong>safe</strong> using CaRide, even at night.", fr:"Je me sentirais <strong>en sécurité</strong> en utilisant CaRide, même la nuit.", r:true },
-      { en:"Knowing who my driver would be, in advance, would make me feel <strong>safer</strong>.", fr:"Savoir à l'avance qui serait mon conducteur me ferait sentir <strong>plus en sécurité</strong>.", r:true },
+      { en:"Knowing who my driver would be, in advance, would make me feel <strong>safer</strong>. <span class=\"lk-note\">(About feeling less worried about accidents or dangerous driving because you know them, not just feeling socially comfortable with them.)</span>", fr:"Savoir à l'avance qui serait mon conducteur me ferait sentir <strong>plus en sécurité</strong>. <span class=\"lk-note\">(Il s'agit de vous sentir moins inquiet·ète des accidents ou d'une conduite dangereuse parce que vous connaissez cette personne, pas seulement de vous sentir à l'aise avec elle.)</span>", r:true },
       { en:"Getting into a car with <strong>people I don't know</strong> feels risky to me.", fr:"Monter dans une voiture avec <strong>des personnes que je ne connais pas</strong> me semble risqué.", r:false }
     ]},
   { id:"env", label:{en:"Environmental motivation",fr:"Motivation environnementale"}, color:"#27500A", bg:"#EAF3DE",
@@ -593,19 +595,20 @@ function buildScreens(){
   S.push({ key:"demo", valid:()=> state.answers.age && state.answers.gender && state.answers.role, render:()=>`
     <span class="eyebrow">${t({en:"About you",fr:"À propos de vous"})}</span><h2>${t({en:"A few quick details",fr:"Quelques informations rapides"})}</h2>
     ${radio("age",{en:"Your age group",fr:"Votre tranche d'âge"},[{en:"18–24",fr:"18–24"},{en:"25–34",fr:"25–34"},{en:"35–44",fr:"35–44"},{en:"45 and above",fr:"45 et plus"}])}
-    ${radio("gender",{en:"Gender",fr:"Genre"},[{en:"Female",fr:"Femme"},{en:"Male",fr:"Homme"}])}
+    ${radio("gender",{en:"Gender",fr:"Genre"},[{en:"Female",fr:"Femme"},{en:"Male",fr:"Homme"},{en:"Prefer not to say",fr:"Préfère ne pas répondre"}])}
     ${radio("role",{en:"Your role on campus",fr:"Votre statut sur le campus"},[{en:"Undergraduate student",fr:"Étudiant·e en licence"},{en:"Master's student",fr:"Étudiant·e en master"},{en:"PhD student",fr:"Doctorant·e"},{en:"Non-permanent researcher: postdoc, lecturer",fr:"Chercheur·se non permanent·e : post-doctorant·e, chargé·e de cours"},{en:"Permanent researcher: faculty, professor, lecturer",fr:"Chercheur·se permanent·e : enseignant·e-chercheur·se, professeur·e, maître de conférences"},{en:"Administrative/support staff",fr:"Personnel administratif/technique"}])}` });
 
   S.push({ key:"ses", valid:()=> !!state.answers.budget, render:()=>`
     <span class="eyebrow">${t({en:"About you",fr:"À propos de vous"})}</span><h2>${t({en:"Your situation",fr:"Votre situation"})}</h2>
     <p class="muted">${t({en:"This helps us see whether the service works for people with different budgets.",fr:"Cela nous aide à voir si le service convient à des budgets différents."})}</p>
-    ${radio("budget",{en:"Roughly, your monthly budget (including any support)",fr:"Environ, votre budget mensuel (aides comprises)"},[{en:"Under €1500",fr:"Moins de 1500 €"},{en:"€1500–€3000",fr:"1500–3000 €"},{en:"€3000–€5000",fr:"3000–5000 €"},{en:"Over €5000",fr:"Plus de 5000 €"},{en:"Prefer not to say",fr:"Préfère ne pas répondre"}])}` });
+    ${radio("budget",{en:"Roughly, your monthly budget (your own income and any support, not your family's)",fr:"Environ, votre budget mensuel (vos propres revenus et aides comprises, pas ceux de votre famille)"},[{en:"Under €1500",fr:"Moins de 1500 €"},{en:"€1500–€3000",fr:"1500–3000 €"},{en:"€3000–€5000",fr:"3000–5000 €"},{en:"Over €5000",fr:"Plus de 5000 €"},{en:"Prefer not to say",fr:"Préfère ne pas répondre"}])}` });
 
-  S.push({ key:"car", valid:()=> state.answers.licence && state.answers.hhcars && state.answers.carUse, render:()=>`
-    <span class="eyebrow">${t({en:"Cars",fr:"Voiture"})}</span><h2>${t({en:"Driving and car access",fr:"Permis et accès à une voiture"})}</h2>
+  S.push({ key:"car", valid:()=> state.answers.licence && state.answers.hhcars && state.answers.carUse && state.answers.navigo, render:()=>`
+    <span class="eyebrow">${t({en:"Mobility resources",fr:"Ressources de mobilité"})}</span><h2>${t({en:"Driving, car, and public transport access",fr:"Permis, voiture et accès aux transports en commun"})}</h2>
     ${radio("licence",{en:"Do you have a driving licence?",fr:"Avez-vous le permis de conduire ?"},[{en:"Yes",fr:"Oui"},{en:"No",fr:"Non"}])}
     ${radio("hhcars",{en:"How many cars are in your household?",fr:"Combien de voitures y a-t-il dans votre foyer ?"},[{en:"0",fr:"0"},{en:"1",fr:"1"},{en:"2",fr:"2"},{en:"3 or more",fr:"3 ou plus"}])}
-    ${radio("carUse",{en:"Is there a car you can use for your own trips?",fr:"Disposez-vous d'une voiture pour vos propres trajets ?"},[{en:"Yes, whenever I need",fr:"Oui, quand j'en ai besoin"},{en:"Sometimes",fr:"Parfois"},{en:"No",fr:"Non"}])}` });
+    ${radio("carUse",{en:"Is there a car you can use for your own trips?",fr:"Disposez-vous d'une voiture pour vos propres trajets ?"},[{en:"Yes, whenever I need",fr:"Oui, quand j'en ai besoin"},{en:"Sometimes",fr:"Parfois"},{en:"No",fr:"Non"}])}
+    ${radio("navigo",{en:"Do you have a Navigo Card subscription?",fr:"Avez-vous un abonnement Navigo ?"},[{en:"Yes",fr:"Oui"},{en:"No",fr:"Non"}])}` });
 
   S.push({ key:"travel", valid:()=> postcodeOk() && state.answers.mainmode && state.answers.freq,
     invalidMsg:()=> (!postcodeOk() ? {en:"Please enter your home postcode (5 digits, e.g. 93160) to continue.",fr:"Veuillez saisir le code postal de votre domicile (5 chiffres, ex. 93160) pour continuer."} : {en:"Please answer to continue.",fr:"Veuillez répondre pour continuer."}),
@@ -683,7 +686,7 @@ function buildScreens(){
 
   S.push({ key:"caride_intro", valid:()=>true, render:()=>`
     <span class="eyebrow">${t({en:"CaRide in detail",fr:"CaRide en détail"})}</span><h2>${t({en:"Now, just CaRide",fr:"Maintenant, uniquement CaRide"})}</h2>
-    <p>${t({en:"The following questions show you two CaRide options side by side. Each time, they'll differ in walking time, waiting time, price, and number of people sharing the car. There's no right answer, just pick the one you'd actually choose.",fr:"Les questions suivantes vous présentent deux offres CaRide côte à côte. Elles diffèrent à chaque fois par le temps de marche, le temps d'attente, le prix et le nombre de personnes dans la voiture. Il n'y a pas de bonne réponse, choisissez simplement celle que vous prendriez réellement."})}</p>` });
+    <p>${t({en:"Imagine you want to go to IKEA Villiers-sur-Marne and the shops nearby (Decathlon, etc.) using CaRide. The following questions show you two CaRide options for that trip, side by side. Each time, they'll differ in walking time, waiting time, price, and number of people sharing the car. There's no right answer, just pick the one you'd actually choose.",fr:"Imaginez que vous souhaitiez vous rendre à IKEA Villiers-sur-Marne et dans les magasins à proximité (Decathlon, etc.) en utilisant CaRide. Les questions suivantes vous présentent deux offres CaRide pour ce trajet, côte à côte. Elles diffèrent à chaque fois par le temps de marche, le temps d'attente, le prix et le nombre de personnes dans la voiture. Il n'y a pas de bonne réponse, choisissez simplement celle que vous prendriez réellement."})}</p>` });
 
   (CARIDE_DESIGN[state.answers.caride_block]||[]).forEach(row=>{
     const task=designToTask(row);
@@ -696,19 +699,27 @@ function buildScreens(){
 
   CARIDE_ID_TASKS.forEach(tk=>{ const task=idToTask(tk); S.push({ key:"cidtask_"+tk.id, render:()=>renderCarideTask(task), valid:()=> !!state.answers[tk.id] }); });
 
+  S.push({ key:"stranger_ok", valid:()=> !!state.answers.stranger_ok, render:()=>`
+    <span class="eyebrow">CaRide</span><h2>${t({en:"Sharing with people you don't know",fr:"Partager avec des personnes que vous ne connaissez pas"})}</h2>
+    ${radio("stranger_ok",{en:"Are you actually OK with sharing a ride with strangers?",fr:"Accepteriez-vous réellement de partager un trajet avec des inconnus ?"},[{en:"Yes, I don't mind sharing with people I don't know",fr:"Oui, cela ne me dérange pas de partager avec des personnes que je ne connais pas"},{en:"I don't mind, but I'd prefer to know them a little",fr:"Cela ne me dérange pas, mais je préférerais les connaître un peu"},{en:"No, I'd rather not share rides with people I don't know at all",fr:"Non, je préfère ne pas partager de trajets avec des personnes que je ne connais pas du tout"}])}` });
+
   ATTITUDES.forEach(c=>{ S.push({ key:"att_"+c.id, render:()=>renderAttitudeGroup(c), valid:()=> c.items.every((it,i)=> state.answers[attKey(c.id,i,it.r)]!=null) }); });
 
-  S.push({ key:"chips", valid:()=>true, render:()=>`
-    <span class="eyebrow">${t({en:"Almost done",fr:"Presque fini"})}</span><h2>${t({en:"What would hold you back, or win you over?",fr:"Qu'est-ce qui vous freinerait, ou vous convaincrait ?"})}</h2>
+  S.push({ key:"barriers", valid:()=>true, render:()=>`
+    <span class="eyebrow">${t({en:"Almost done",fr:"Presque fini"})}</span><h2>${t({en:"What would hold you back?",fr:"Qu'est-ce qui vous freinerait ?"})}</h2>
     <div class="q">${t({en:"What would make you hesitate to use CaRide? (you can pick more than one)",fr:"Qu'est-ce qui vous ferait hésiter à utiliser CaRide ? (vous pouvez en choisir plusieurs)"})}</div>
-    ${chipBlock("barriers",BARRIERS)}
+    ${chipBlock("barriers",BARRIERS)}` });
+
+  S.push({ key:"incentives", valid:()=>true, render:()=>`
+    <span class="eyebrow">${t({en:"Almost done",fr:"Presque fini"})}</span><h2>${t({en:"What would win you over?",fr:"Qu'est-ce qui vous convaincrait ?"})}</h2>
     <div class="q">${t({en:"What would make you more likely to use it? (you can pick more than one)",fr:"Qu'est-ce qui vous inciterait davantage à l'utiliser ? (vous pouvez en choisir plusieurs)"})}</div>
     ${chipBlock("incentives",INCENTIVES)}` });
 
-  S.push({ key:"final_interest", valid:()=> !!state.answers.final_interest, render:()=>`
+  S.push({ key:"final_interest", valid:()=> !!state.answers.final_interest && (!["Yes, definitely","Maybe"].includes(state.answers.final_interest) || hasMulti("final_interest_purpose")), render:()=>`
     <span class="eyebrow">CaRide</span><h2>${t({en:"One last question",fr:"Une dernière question"})}</h2>
     <p>${t({en:"You've now seen CaRide in much more detail than at the start of this survey.",fr:"Vous avez maintenant vu CaRide de façon bien plus détaillée qu'au début de ce questionnaire."})}</p>
-    ${radio("final_interest",{en:"Now that you know more about CaRide, would you be interested in using it?",fr:"Maintenant que vous en savez plus sur CaRide, seriez-vous intéressé·e par son utilisation ?"},[{en:"Yes, definitely",fr:"Oui, tout à fait"},{en:"Maybe",fr:"Peut-être"},{en:"Probably not",fr:"Probablement pas"},{en:"No",fr:"Non"}])}` });
+    ${radio("final_interest",{en:"Now that you know more about CaRide, would you be interested in using it?",fr:"Maintenant que vous en savez plus sur CaRide, seriez-vous intéressé·e par son utilisation ?"},[{en:"Yes, definitely",fr:"Oui, tout à fait"},{en:"Maybe",fr:"Peut-être"},{en:"Probably not",fr:"Probablement pas"},{en:"No",fr:"Non"}])}
+    ${ ["Yes, definitely","Maybe"].includes(state.answers.final_interest) ? multi("final_interest_purpose",{en:"For what kinds of trips would you likely use it? (you can pick more than one)",fr:"Pour quels types de trajets l'utiliseriez-vous probablement ? (vous pouvez en choisir plusieurs)"},SM_PURPOSE) : "" }` });
 
   S.push({ key:"comment", valid:()=>true, render:()=>`
     <span class="eyebrow">${t({en:"Last one",fr:"Dernière question"})}</span><h2>${t({en:"Anything you'd like to add?",fr:"Souhaitez-vous ajouter quelque chose ?"})}</h2>
@@ -1160,7 +1171,7 @@ function designToTask(row){
   });
   return { id:"caride_"+row.task,
     title:{en:"CaRide option A or B?",fr:"Offre CaRide A ou B ?"},
-    context:{en:"Same trip, two CaRide offers. Which would you take?",fr:"Même trajet, deux offres CaRide. Laquelle prendriez-vous ?"},
+    context:{en:"Same trip to IKEA Villiers-sur-Marne and the shops nearby, two CaRide offers. Which would you take?",fr:"Même trajet vers IKEA Villiers-sur-Marne et les magasins à proximité, deux offres CaRide. Laquelle prendriez-vous ?"},
     A:mk(row.A), B:mk(row.B) };
 }
 function idToTask(tk){
