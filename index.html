@@ -601,7 +601,7 @@ function buildScreens(){
   S.push({ key:"ses", valid:()=> !!state.answers.budget, render:()=>`
     <span class="eyebrow">${t({en:"About you",fr:"À propos de vous"})}</span><h2>${t({en:"Your situation",fr:"Votre situation"})}</h2>
     <p class="muted">${t({en:"This helps us see whether the service works for people with different budgets.",fr:"Cela nous aide à voir si le service convient à des budgets différents."})}</p>
-    ${radio("budget",{en:"Roughly, your monthly budget (your own income and any support, not your family's)",fr:"Environ, votre budget mensuel (vos propres revenus et aides comprises, pas ceux de votre famille)"},[{en:"Under €1500",fr:"Moins de 1500 €"},{en:"€1500–€3000",fr:"1500–3000 €"},{en:"€3000–€5000",fr:"3000–5000 €"},{en:"Over €5000",fr:"Plus de 5000 €"},{en:"Prefer not to say",fr:"Préfère ne pas répondre"}])}` });
+    ${radio("budget",{en:"Roughly, your monthly budget (your own income and any support, not your family's)",fr:"Environ, votre budget mensuel (vos propres revenus et aides comprises, pas ceux de votre famille)"},[{en:"Under €1500",fr:"Moins de 1500 €"},{en:"€1500–€3000",fr:"1500–3000 €"},{en:"€3000–€5000",fr:"3000–5000 €"},{en:"Over €5000",fr:"Plus de 5000 €"}])}` });
 
   S.push({ key:"car", valid:()=> state.answers.licence && state.answers.hhcars && state.answers.carUse && state.answers.navigo, render:()=>`
     <span class="eyebrow">${t({en:"Mobility resources",fr:"Ressources de mobilité"})}</span><h2>${t({en:"Driving, car, and public transport access",fr:"Permis, voiture et accès aux transports en commun"})}</h2>
